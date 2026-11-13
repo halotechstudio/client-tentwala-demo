@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tentwala Simulation</title>
+<meta name="description" content="Live simulation of Tentwala: customer app, vendor app and admin dashboard for booking tent houses in Rajasthan.">
+<meta property="og:title" content="Tentwala · live demo of all three apps">
+<meta property="og:description" content="Book a tent house end to end: customer app, vendor app and admin dashboard, with escrow, delivery OTP and return count.">
+<meta property="og:image" content="https://halotechstudio.github.io/tentwala-demo/preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: dark showroom page; three devices on one scaled canvas (phone · phone · browser), guided stepper above, message log below. */
+:root{
+  color-scheme:light;
+  --page:#0F0D0C;--page-2:#191614;--page-3:#24201D;--page-line:#332E2A;--page-text:#EEEAE5;--page-muted:#A59F98;
+  --bg:#F6F4F1;--surface:#FFFFFF;--sunken:#F0EDE9;--line:#E7E2DB;--line-2:#D6CFC5;
+  --ink:#1C1917;--ink-2:#3F3A36;--muted:#6B645D;--faint:#948C83;
+  --brand:#8A1C2B;--brand-600:#721523;--brand-50:#FBF2F3;--brand-100:#F2D9DC;
+  --gold:#A86412;--gold-50:#FDF5E8;
+  --teal:#0E5E59;--teal-700:#0A4642;--teal-900:#08302D;--teal-50:#E9F3F2;--teal-100:#CFE5E2;
+  --ok:#157F3B;--ok-50:#EAF6EE;--warn:#A85A07;--warn-50:#FEF4E6;--bad:#B42318;--bad-50:#FDEEEC;--info:#1E4FD0;--info-50:#EDF2FE;--violet:#6234C9;--violet-50:#F2EDFD;
+  --c-cust:#E2A33B;--c-vend:#3BB5A9;--c-adm:#A895F5;
+  --r-sm:8px;--r:12px;--r-lg:16px;--r-xl:20px;
+  --sh-1:0 1px 2px rgba(28,25,23,.05),0 1px 1px rgba(28,25,23,.03);
+  --sh-2:0 6px 16px rgba(28,25,23,.08),0 1px 3px rgba(28,25,23,.05);
+  --sh-3:0 16px 40px rgba(28,25,23,.18);
+  --font:'Plus Jakarta Sans','Noto Sans Devanagari',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --hi:'Noto Sans Devanagari','Plus Jakarta Sans',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--page)}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;
+  background:radial-gradient(1200px 600px at 50% -10%,#2A211C 0%,transparent 60%),var(--page)}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;touch-action:manipulation}
+input,select{font:inherit;color:inherit}
+img{display:block;max-width:100%}
+.i{flex:none;display:inline-block;vertical-align:middle}
+.i.fill{fill:currentColor}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+.hi{font-family:var(--hi)}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* ---------- showroom chrome ---------- */
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:20px max(24px,env(safe-area-inset-left,0px)) 14px;color:var(--page-text)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mk{width:40px;height:40px;border-radius:12px;background:var(--brand);display:grid;place-items:center;color:#fff}
+.logo b{font-size:20px;font-weight:800;letter-spacing:-.02em;display:block;line-height:1.1}
+.logo span{font-size:13px;color:var(--page-muted)}
+.top .sp{flex:1}
+.tbtn{height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--page-line);color:var(--page-text);font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:background .15s}
+.tbtn:hover{background:var(--page-3)}
+.tbtn.pri{background:#F3EEE8;color:var(--ink);border-color:#F3EEE8}
+.tbtn.pri:hover{background:#fff}
+.tbtn:disabled{opacity:.45;cursor:default}
+.guide{margin:0 max(24px,env(safe-area-inset-left,0px)) 8px;background:var(--page-2);border:1px solid var(--page-line);border-radius:16px;color:var(--page-text);overflow:hidden}
+.gsteps{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));border-bottom:1px solid var(--page-line)}
+.gs{padding:12px 10px 10px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--page-line);position:relative;min-width:0;text-align:left}
+.gs:last-child{border-right:0}
+.gs .n{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted)}
+.gs .n i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.gs .t{font-size:13px;font-weight:600;line-height:1.3;color:var(--page-muted)}
+.gs.done .t{color:var(--page-text)}
+.gs.done .n:after{content:"Done";margin-left:auto;color:#7FD3A0;letter-spacing:.04em}
+.gs.cur{background:var(--page-3)}
+.gs.cur:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--c)}
+.gs.cur .t{color:#fff}
+.gnow{display:flex;align-items:center;gap:16px;padding:14px 18px;flex-wrap:wrap}
+.gnow .who{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:var(--page-3);display:inline-flex;align-items:center;gap:6px;flex:none}
+.gnow .who i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.gnow p{flex:1;min-width:260px;font-size:15px;line-height:1.5;color:#DCD6CF}
+.gnow p b{color:#fff;font-weight:700}
+.gnow .acts{display:flex;gap:8px}
+#wrap{position:relative}
+#canvas{width:1720px;transform-origin:top left;display:flex;gap:28px;padding:18px 24px 0;align-items:flex-start}
+#canvas.stack{width:890px;flex-direction:column;align-items:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lbl{display:flex;align-items:center;gap:10px;color:var(--page-text);font-size:14px;font-weight:700}
+.lbl i{width:8px;height:8px;border-radius:50%}
+.lbl span{font-weight:500;color:var(--page-muted)}
+.col.glow .phone,.col.glow .browser{box-shadow:0 0 0 3px var(--gc),0 30px 80px rgba(0,0,0,.55)}
+.phone{width:384px;height:800px;border-radius:54px;background:#050505;padding:10px;box-shadow:0 0 0 1px #2E2A27,0 30px 80px rgba(0,0,0,.55);position:relative;transition:box-shadow .3s var(--ease)}
+.phone:before{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);width:100px;height:28px;border-radius:16px;background:#000;z-index:40}
+.screen{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+.sbar{height:48px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font-size:14px;font-weight:700;color:var(--ink);background:var(--sbg,var(--surface))}
+.sbar.dark{color:#fff}
+.sbar .sic{display:flex;gap:5px;align-items:center}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.scroll::-webkit-scrollbar{width:0}
+.feedbar{margin:22px max(24px,env(safe-area-inset-left,0px)) 36px;background:var(--page-2);border:1px solid var(--page-line);border-radius:16px;padding:16px 18px;color:var(--page-text)}
+.feedbar h2{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.fl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 28px}
+.fl div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;font-size:13.5px;line-height:1.45;padding:6px 0;border-bottom:1px solid var(--page-line)}
+.fl .to{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;color:var(--page-muted)}
+.fl .to i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.fl em{font-style:normal;color:var(--page-muted);font-size:12px;white-space:nowrap}
+.fl .ch{color:var(--page-muted)}
+
+/* ---------- shared app components ---------- */
+.pad{padding:16px}
+.row{display:flex;align-items:center;gap:8px}
+.sbw{justify-content:space-between}
+.stack8{display:flex;flex-direction:column;gap:8px}
+.stack12{display:flex;flex-direction:column;gap:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:var(--sh-1)}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.card-h b{font-size:15px;font-weight:700}
+.card-h span{font-size:13px;color:var(--muted)}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:24px 0 12px}
+.sec-h h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-h span{font-size:13px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:0 16px;border-radius:var(--r);font-weight:700;font-size:15px;background:var(--brand);color:#fff;transition:background .15s,transform .1s}
+.btn:hover{background:var(--brand-600)}
+.btn:active{transform:scale(.985)}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line-2)}
+.btn.sec:hover{background:var(--sunken)}
+.btn.tonal{background:var(--brand-50);color:var(--brand)}
+.btn.tonal:hover{background:var(--brand-100)}
+.btn.danger{background:var(--surface);color:var(--bad);border:1px solid #F1C9C4}
+.btn.light{background:rgba(255,255,255,.16);color:#fff}
+.btn.sm{min-height:40px;font-size:14px;border-radius:10px;padding:0 12px}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.ib{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink-2);flex:none;transition:background .15s}
+.ib:hover{background:var(--sunken)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--pb);color:var(--pc)}
+.pill:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-req{--pb:var(--warn-50);--pc:var(--warn)}.s-acc{--pb:var(--info-50);--pc:var(--info)}.s-conf{--pb:var(--ok-50);--pc:var(--ok)}
+.s-disp{--pb:var(--teal-50);--pc:var(--teal)}.s-del{--pb:var(--violet-50);--pc:var(--violet)}.s-ret{--pb:var(--warn-50);--pc:var(--warn)}
+.s-set{--pb:var(--ok);--pc:#fff}.s-x{--pb:var(--sunken);--pc:var(--muted)}.s-pend{--pb:var(--warn-50);--pc:var(--warn)}.s-live{--pb:var(--ok-50);--pc:var(--ok)}
+.rate{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--ink)}
+.rate .i{color:#D99A12}
+.rate span{color:var(--muted);font-weight:500}
+.field{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);padding:8px 12px;min-height:56px;justify-content:center}
+.field .l{font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+.field input,.field select{border:0;background:transparent;font-size:15px;font-weight:700;color:var(--ink);outline:none;width:100%}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stepper{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;font-weight:700}
+.stepper button{width:28px;height:28px;border-radius:8px;background:var(--sunken);display:grid;place-items:center;color:var(--ink)}
+.qty{display:inline-flex;align-items:center;height:36px;border-radius:10px;background:var(--brand);color:#fff;font-weight:700}
+.qty button{width:34px;height:36px;display:grid;place-items:center;color:#fff}
+.qty span{min-width:30px;text-align:center;font-size:14px}
+.add{height:36px;padding:0 16px;border-radius:10px;border:1.5px solid var(--brand);color:var(--brand);font-weight:700;font-size:14px;background:var(--surface);display:inline-flex;align-items:center;gap:4px}
+.add:disabled{border-color:var(--line-2);color:var(--faint)}
+.subhdr{display:flex;align-items:center;gap:12px;padding:4px 16px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.subhdr .t{flex:1;min-width:0}
+.subhdr .t b{display:block;font-size:17px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subhdr .t span{font-size:13px;color:var(--muted)}
+.ctabar{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px 26px;display:flex;gap:12px;align-items:center}
+.ctabar .sum{flex:1;font-size:12px;color:var(--muted);line-height:1.3}
+.ctabar .sum b{display:block;font-size:19px;color:var(--ink);font-weight:800}
+.ctabar .btn{width:auto;padding:0 20px}
+.tabbar{flex:none;display:flex;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px 24px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--faint);position:relative;padding-top:8px;min-height:48px}
+.tabbar button.on{color:var(--brand)}
+.tabbar button.on:before{content:"";position:absolute;top:-6px;width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--brand)}
+.tabbar .bdg{position:absolute;top:4px;left:calc(50% + 6px);background:var(--bad);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:grid;place-items:center;padding:0 4px}
+.toast{position:absolute;top:52px;left:10px;right:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px 14px;z-index:30;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--sh-3);animation:drop .3s var(--ease);font-size:13.5px;line-height:1.4;color:var(--ink)}
+.toast .ti{width:36px;height:36px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;flex:none}
+.toast .tt{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:2px}
+@keyframes drop{from{transform:translateY(-16px);opacity:0}to{transform:none;opacity:1}}
+.bill{font-size:14px;display:flex;flex-direction:column;gap:8px}
+.bill .r{display:flex;justify-content:space-between;gap:12px}
+.bill .r span:first-child{color:var(--ink-2)}
+.bill .r.t{border-top:1px dashed var(--line-2);padding-top:12px;margin-top:4px;font-weight:800;font-size:16px}
+.bill .r.t span:first-child{color:var(--ink)}
+.bill .r.sub{font-size:13px}
+.bill .r.sub span{color:var(--muted)!important}
+.bill .r.g span{color:var(--ok)!important;font-weight:600}
+.trust{display:flex;gap:12px;align-items:flex-start;background:var(--ok-50);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.5;color:#14532D}
+.trust .i{color:var(--ok);margin-top:2px}
+.trust b{font-weight:700}
+.list .li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .li:last-child{border-bottom:0;padding-bottom:0}
+.list .li:first-child{padding-top:0}
+.thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--sunken);flex:none}
+.li .nm{flex:1;min-width:0;font-size:14px;font-weight:600;line-height:1.35}
+.li .nm small{display:block;font-size:12.5px;color:var(--muted);font-weight:500}
+.li .v{font-size:14px;font-weight:700}
+.tl{display:flex;flex-direction:column}
+.tl div{display:grid;grid-template-columns:14px 1fr;gap:10px;font-size:13px;line-height:1.45;padding-bottom:12px;position:relative}
+.tl div:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--brand);margin-top:5px;box-shadow:0 0 0 3px var(--brand-50)}
+.tl div:after{content:"";position:absolute;left:4px;top:16px;bottom:0;width:1px;background:var(--line-2)}
+.tl div:last-child:after{display:none}
+.tl em{display:block;font-style:normal;color:var(--muted);font-size:12px}
+.acard{border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line)}
+.acard .ah{display:flex;gap:12px;align-items:flex-start}
+.acard .aic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--tb);color:var(--tc)}
+.acard h3{font-size:16px;font-weight:700;line-height:1.3}
+.acard p{font-size:13.5px;line-height:1.5;color:var(--ink-2);margin-top:2px}
+.acard.hero{background:var(--brand);border-color:var(--brand);color:#fff}
+.acard.hero p{color:rgba(255,255,255,.85)}
+.acard.hero .aic{background:rgba(255,255,255,.16);color:#fff}
+.t-ok{--tb:var(--ok-50);--tc:var(--ok)}.t-warn{--tb:var(--warn-50);--tc:var(--warn)}.t-info{--tb:var(--info-50);--tc:var(--info)}.t-teal{--tb:var(--teal-50);--tc:var(--teal)}.t-bad{--tb:var(--bad-50);--tc:var(--bad)}.t-v{--tb:var(--violet-50);--tc:var(--violet)}
+.progress .pt{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);margin-bottom:10px}
+.progress .pt b{color:var(--ink);font-size:15px}
+.pbar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.pbar i{height:6px;border-radius:3px;background:var(--line)}
+.pbar i.d{background:var(--ok)}
+.pbar i.c{background:var(--brand)}
+.plabels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:8px;font-weight:600}
+.otp{display:flex;gap:8px;justify-content:center}
+.otp span{width:52px;height:60px;border-radius:12px;background:var(--surface);border:1px solid var(--line-2);color:var(--ink);font-size:30px;font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.sheet{position:absolute;inset:0;background:rgba(15,13,12,.5);z-index:25;display:flex;align-items:flex-end;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet .in{background:var(--surface);width:100%;border-radius:24px 24px 0 0;padding:10px 20px 32px;animation:up .28s var(--ease)}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto 16px}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.upis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.upi{border:1px solid var(--line-2);border-radius:var(--r);height:56px;padding:0 12px;font-weight:700;display:flex;align-items:center;gap:10px;font-size:14px;transition:background .15s}
+.upi:hover{background:var(--sunken)}
+.upi i{font-style:normal;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:13px;font-weight:800;background:var(--sunken);color:var(--ink-2)}
+.spin{width:44px;height:44px;border:4px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .8s linear infinite;margin:24px auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.stars{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.stars button{color:var(--line-2);width:40px;height:40px;display:grid;place-items:center}
+.stars button.on{color:#D99A12}
+.empty{text-align:center;padding:48px 24px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:14px}
+.empty .ei{width:56px;height:56px;border-radius:16px;background:var(--sunken);display:grid;place-items:center;color:var(--faint);margin-bottom:4px}
+.empty b{color:var(--ink);font-size:16px}
+.rowcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;display:flex;gap:12px;align-items:center;cursor:pointer;transition:background .15s}
+.rowcard:hover{background:#FCFBFA}
+.rowcard .ttl{font-size:15px;font-weight:700;line-height:1.3}
+.rowcard .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin:0 -16px;padding:0 16px}
+.tabs::-webkit-scrollbar{height:0}
+.tabs button{flex:none;height:44px;padding:0 10px;font-size:14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--brand);border-color:var(--brand)}
+
+/* ---------- customer ---------- */
+.c-top{background:var(--surface);padding:4px 16px 16px;border-bottom:1px solid var(--line)}
+.loc{display:flex;flex-direction:column;gap:2px}
+.loc .k{font-size:12px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:4px}
+.loc .v{display:flex;align-items:center;gap:2px;font-weight:800;font-size:16px}
+.loc select{border:0;background:transparent;font-weight:800;font-size:16px;appearance:none;cursor:pointer;outline:none}
+.greet{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:16px;line-height:1.2}
+.greet-sub{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+.search{margin-top:16px;height:48px;background:var(--sunken);border-radius:var(--r);padding:0 14px;font-size:14px;display:flex;gap:10px;align-items:center;color:var(--faint)}
+.evgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.evb{border:1px solid var(--line);border-radius:var(--r);padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--ink-2);background:var(--surface);transition:all .15s;line-height:1.2;text-align:center}
+.evb .i{color:var(--muted)}
+.evb small{font-size:11.5px;font-weight:500;color:var(--faint);font-family:var(--hi)}
+.evb.on{border-color:var(--brand);background:var(--brand-50);color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.evb.on .i{color:var(--brand)}
+.promo{position:relative;border-radius:var(--r-lg);overflow:hidden;margin-top:16px;min-height:150px;display:flex;align-items:flex-end;color:#fff}
+.promo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.promo:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,10,5,.05) 0%,rgba(20,10,5,.8) 100%)}
+.promo div{position:relative;z-index:1;padding:16px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.promo b{display:block;font-size:19px;font-weight:800;margin:4px 0;line-height:1.25}
+.promo span.d{font-size:13px;opacity:.88;line-height:1.45;display:block}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;box-shadow:var(--sh-1);transition:box-shadow .2s,transform .2s}
+.vcard:hover{box-shadow:var(--sh-2)}
+.vcover{position:relative;aspect-ratio:16/8.5;background:var(--sunken)}
+.vcover img{width:100%;height:100%;object-fit:cover}
+.badge{position:absolute;top:12px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.badge.ver{left:12px;background:rgba(255,255,255,.95);color:var(--ok)}
+.badge.new{right:12px;background:var(--ink);color:#fff}
+.vbody{padding:14px 16px 16px}
+.vbody h3{font-size:16.5px;font-weight:700;line-height:1.3}
+.vbody .hn{font-size:13px;color:var(--muted);font-family:var(--hi)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.meta span{display:inline-flex;align-items:center;gap:4px}
+.vfoot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.from{font-size:12.5px;color:var(--muted)}
+.from b{font-size:17px;color:var(--ink);font-weight:800;margin:0 2px}
+.hscroll{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:0 16px 4px}
+.hscroll::-webkit-scrollbar{height:0}
+.mini{flex:none;width:136px;cursor:pointer}
+.mini img{width:136px;height:136px;border-radius:var(--r);object-fit:cover;background:var(--sunken)}
+.mini b{display:block;font-size:13.5px;font-weight:600;line-height:1.3;margin-top:8px}
+.mini .p{font-size:13.5px;font-weight:800;margin-top:2px}
+.mini .p span{font-weight:500;color:var(--muted);font-size:12px}
+.cover{position:relative;height:230px;flex:none;background:var(--sunken)}
+.cover img{width:100%;height:100%;object-fit:cover}
+.cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 40%)}
+.fab{position:absolute;top:12px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;z-index:2;box-shadow:var(--sh-2);color:var(--ink)}
+.fab.l{left:16px}.fab.r{right:16px}
+.sheetbody{background:var(--bg);border-radius:24px 24px 0 0;margin-top:-24px;position:relative;padding:20px 16px 16px}
+.t1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin:16px 0}
+.facts div{padding:12px;text-align:center;border-right:1px solid var(--line)}
+.facts div:last-child{border:0}
+.facts b{display:block;font-size:16px;font-weight:800}
+.facts span{font-size:12px;color:var(--muted)}
+.estimate{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--gold-50);border:1px solid #F1DDB8;border-radius:var(--r-lg);padding:14px;margin-bottom:12px;transition:background .15s}
+.estimate:hover{background:#FBEFD9}
+.estimate .ei{width:40px;height:40px;border-radius:12px;background:#fff;color:var(--gold);display:grid;place-items:center;flex:none}
+.estimate b{display:block;font-size:15px;font-weight:700}
+.estimate span{font-size:12.5px;color:var(--muted)}
+.prow{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.pimg{width:76px;height:76px;border-radius:var(--r);object-fit:cover;background:var(--sunken);flex:none}
+.pinfo{flex:1;min-width:0;line-height:1.35}
+.pinfo b{display:block;font-size:14.5px;font-weight:700}
+.pinfo .hn{font-size:12.5px;color:var(--muted);font-family:var(--hi)}
+.price{font-weight:800;font-size:15px;margin-top:4px}
+.price small{font-size:12px;color:var(--muted);font-weight:500}
+.avail{font-size:12px;color:var(--ok);font-weight:600;display:inline-flex;align-items:center;gap:5px;margin-top:2px}
+.avail:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.avail.low{color:var(--warn)}
+.avail.out{color:var(--bad)}
+.sched{display:flex;flex-direction:column;gap:0;margin-top:4px}
+.sched div{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.sched div:last-child{border:0}
+.sched .n{width:28px;height:28px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--ink-2)}
+.sched .on .n{background:var(--brand);color:#fff}
+.sched small{display:block;color:var(--muted);font-size:12px}
+.sched b{font-size:15px;font-weight:800}
+
+/* ---------- vendor (teal theme) ---------- */
+.vapp{--brand:var(--teal);--brand-600:var(--teal-700);--brand-50:var(--teal-50);--brand-100:var(--teal-100)}
+.v-top{background:var(--teal-900);color:#fff;padding:4px 16px 20px}
+.v-top select{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;font-size:13px;font-weight:600;height:36px;padding:0 10px;max-width:220px;outline:none}
+.v-top select option{color:#000}
+.online{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#9BE3C1;background:rgba(155,227,193,.12);height:28px;padding:0 10px;border-radius:999px}
+.online:before{content:"";width:7px;height:7px;border-radius:50%;background:#58D39A}
+.v-top h1{font-size:22px;font-weight:800;margin-top:16px;letter-spacing:-.01em;line-height:1.25}
+.v-top p{font-size:13.5px;color:rgba(255,255,255,.7);margin-top:2px}
+.vstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.vstat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:10px 12px}
+.vstat span{font-size:12px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:6px}
+.vstat b{display:block;font-size:19px;font-weight:800;margin-top:2px}
+.req{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;box-shadow:var(--sh-2)}
+.req .hd{display:flex;gap:12px;align-items:center}
+.av{width:40px;height:40px;border-radius:50%;background:var(--teal-50);color:var(--teal);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.req .nm{flex:1;min-width:0}
+.req .nm b{display:block;font-size:15px}
+.req .nm span{font-size:12.5px;color:var(--muted)}
+.req .amt{font-size:17px;font-weight:800}
+.req .ln{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tag{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border-radius:8px;background:var(--sunken);font-size:12px;font-weight:600;color:var(--ink-2)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{border-radius:10px;background:var(--surface);border:1px solid var(--line);text-align:center;padding:6px 0;font-size:11px;color:var(--muted);line-height:1.2;font-weight:600}
+.day b{display:block;font-size:15px;color:var(--ink);font-weight:800}
+.day.pk{border-color:#E9C98F;background:var(--gold-50)}
+.day.bk{background:var(--teal);border-color:var(--teal);color:rgba(255,255,255,.8)}
+.day.bk b{color:#fff}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--c);border:1px solid var(--b,transparent)}
+.ob-top{background:var(--teal-900);color:#fff;padding:8px 20px 24px}
+.ob-top .mk{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.12);display:grid;place-items:center}
+.ob-top h1{font-size:24px;font-weight:800;margin-top:16px;line-height:1.2}
+.ob-top p{font-size:14px;color:rgba(255,255,255,.72);margin-top:4px}
+.perks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.perks div{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.08);border-radius:10px;padding:10px}
+.perks .i{color:#9BE3C1}
+.step-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step-h .n{width:26px;height:26px;border-radius:50%;background:var(--teal);color:#fff;font-size:12.5px;font-weight:800;display:grid;place-items:center}
+.step-h b{font-size:15px}
+.step-h span{font-size:12.5px;color:var(--muted);font-family:var(--hi)}
+.vfield{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.vfield label{font-size:12px;font-weight:600;color:var(--muted)}
+.vfield input,.vfield select{height:44px;border:1px solid var(--line-2);border-radius:10px;padding:0 12px;font-size:15px;font-weight:600;background:var(--surface);outline:none;width:100%}
+.vfield input:focus,.vfield select:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-50)}
+.docs-g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.doc{min-height:48px;border:1px dashed var(--line-2);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;text-align:left;display:flex;align-items:center;gap:8px;background:var(--surface);color:var(--ink-2)}
+.doc.ok{border-style:solid;border-color:#A7D9BC;background:var(--ok-50);color:#14532D}
+.doc.ok .i{color:var(--ok)}
+.chk{display:flex;gap:6px;flex-wrap:wrap}
+.chk button{height:36px;border:1px solid var(--line-2);border-radius:999px;padding:0 12px 0 4px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:var(--surface)}
+.chk button img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.chk button.on{border-color:var(--teal);background:var(--teal-50);color:var(--teal-700)}
+.otpin input{width:100%;height:64px;font-size:30px;letter-spacing:18px;text-align:center;border:1px solid var(--line-2);border-radius:var(--r);font-weight:800;outline:none;font-variant-numeric:tabular-nums;background:var(--surface)}
+.otpin input:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-50)}
+.wallet{background:var(--teal-900);color:#fff;border-radius:var(--r-xl);padding:18px}
+.wallet .k{font-size:13px;color:rgba(255,255,255,.7)}
+.wallet .big{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+.w3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.w3 div{background:rgba(255,255,255,.08);border-radius:10px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.7)}
+.w3 b{display:block;font-size:14.5px;color:#fff;margin-top:2px}
+.btn.gold{background:#F3E2C0;color:#3E2A07}
+.btn.gold:hover{background:#F7EAD0}
+.pinput{width:72px;height:32px;border:1px solid var(--line-2);border-radius:8px;padding:0 8px;font-weight:700;font-size:14px;outline:none}
+.tgl{width:40px;height:24px;border-radius:12px;background:var(--line-2);position:relative;transition:background .2s;flex:none}
+.tgl:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--sh-1);transition:transform .2s var(--ease)}
+.tgl.on{background:var(--teal)}
+.tgl.on:after{transform:translateX(16px)}
+
+/* ---------- admin ---------- */
+.browser{width:840px;height:800px;border-radius:14px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 1px #2E2A27,0 30px 80px rgba(0,0,0,.55);transition:box-shadow .3s var(--ease)}
+.chrome{flex:none;height:40px;background:#ECE8E3;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line-2)}
+.chrome i{width:11px;height:11px;border-radius:50%;display:block}
+.chrome .url{margin-left:16px;background:var(--surface);border-radius:8px;height:26px;padding:0 12px;font-size:12.5px;color:var(--muted);flex:1;max-width:340px;display:flex;align-items:center;gap:6px}
+.adm{flex:1;display:flex;min-height:0;position:relative;background:var(--bg)}
+.side{width:188px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.side .brand{display:flex;align-items:center;gap:10px;padding:0 6px 16px}
+.side .brand .mk{width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center}
+.side .brand b{font-size:15px;font-weight:800;display:block;line-height:1.1}
+.side .brand span{font-size:11.5px;color:var(--muted)}
+.side .grp{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--faint);text-transform:uppercase;padding:12px 8px 6px}
+.side button{text-align:left;height:38px;padding:0 10px;border-radius:9px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px;color:var(--ink-2)}
+.side button .i{color:var(--faint)}
+.side button:hover{background:var(--sunken)}
+.side button.on{background:var(--brand-50);color:var(--brand)}
+.side button.on .i{color:var(--brand)}
+.side button em{font-style:normal;margin-left:auto;background:var(--brand);color:#fff;border-radius:9px;font-size:11px;font-weight:700;min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}
+.side .me{margin-top:auto;display:flex;gap:10px;align-items:center;padding:10px 6px 0;border-top:1px solid var(--line);font-size:12.5px}
+.side .me .av{width:32px;height:32px;font-size:12px;background:var(--brand-50);color:var(--brand)}
+.side .me b{display:block;font-size:13px}
+.side .me span{color:var(--muted)}
+.amain{flex:1;overflow-y:auto;padding:20px 22px;min-width:0}
+.amain::-webkit-scrollbar{width:8px}.amain::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px}
+.ahead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:16px}
+.ahead h1{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.ahead p{font-size:13px;color:var(--muted);margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;transition:background .6s}
+.kpi .kh{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);font-weight:600}
+.kpi .kh .ki{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--tb);color:var(--tc)}
+.kpi .v{font-size:23px;font-weight:800;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;font-weight:600;color:var(--ok);margin-top:2px;display:flex;align-items:center;gap:4px}
+.kpi .d.n{color:var(--muted)}
+.kpi.flash{background:#FFF8E8}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;margin-bottom:16px;min-width:0}
+.panel h2{font-size:14.5px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel h2 small{color:var(--muted);font-weight:500;font-size:12.5px}
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.chart{position:relative;height:170px;margin:8px 0 0 30px}
+.chart .grid{position:absolute;inset:0 0 22px 0;display:flex;flex-direction:column;justify-content:space-between}
+.chart .grid div{border-top:1px dashed var(--line);position:relative;height:0}
+.chart .grid div span{position:absolute;left:-30px;top:-8px;font-size:11px;color:var(--faint);width:24px;text-align:right}
+.chart .bars{position:absolute;inset:0 0 0 0;display:flex;align-items:flex-end;gap:8px;padding-bottom:22px}
+.chart .cb{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.chart .cb div{width:100%;max-width:28px;border-radius:5px 5px 0 0;background:#E6D6C7;position:relative}
+.chart .cb.pk div{background:#C9A487}
+.chart .cb.cur div{background:var(--brand)}
+.chart .cb .val{position:absolute;top:-18px;font-size:11px;font-weight:700;color:var(--brand);white-space:nowrap}
+.chart .cb span.m{position:absolute;bottom:-20px;font-size:11px;color:var(--muted)}
+.legend2{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:14px;flex-wrap:wrap}
+.legend2 span{display:inline-flex;align-items:center;gap:6px}
+.legend2 i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:0 8px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.clk{cursor:pointer}
+.tbl tr.clk:hover td{background:#FBFAF8}
+.tbl td .s{display:block;font-size:12px;color:var(--muted)}
+.tbl .r{text-align:right}
+.ab{height:32px;padding:0 12px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--brand);color:#fff;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ab.g{background:var(--ok)}.ab.o{background:var(--surface);border:1px solid var(--line-2);color:var(--ink)}.ab.r{background:var(--surface);border:1px solid #F1C9C4;color:var(--bad)}
+.att{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.4}
+.att:last-child{border:0}
+.att .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:none;background:var(--tb);color:var(--tc)}
+.att div{flex:1;min-width:0}
+.act{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);line-height:1.45}
+.act:last-child{border:0}
+.act em{font-style:normal;color:var(--muted);font-size:12px}
+.act b{font-weight:700}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:400px;background:var(--surface);box-shadow:-16px 0 40px rgba(28,25,23,.14);padding:20px;overflow-y:auto;z-index:5;animation:sl .25s var(--ease);border-left:1px solid var(--line)}
+@keyframes sl{from{transform:translateX(100%)}to{transform:none}}
+.split{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:4px 0 10px;gap:2px}
+.leg{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.leg div{display:flex;justify-content:space-between}
+.leg span{display:inline-flex;align-items:center;gap:8px;color:var(--ink-2)}
+.leg span:before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.setg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.setg label{font-size:12.5px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.setg input{height:42px;border:1px solid var(--line-2);border-radius:10px;padding:0 12px;font-size:15px;font-weight:700;color:var(--ink);outline:none}
+.setg input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)}
+.setg .help{font-weight:500;font-size:12px;color:var(--faint)}
+.docs{display:flex;gap:4px;flex-wrap:wrap;width:176px}
+.tbl td.vn{min-width:180px}
+.panel.tw{overflow-x:auto}
+.docs span{font-size:11px;height:22px;padding:0 7px;border-radius:6px;background:var(--ok-50);color:var(--ok);font-weight:700;display:inline-flex;align-items:center;gap:3px}
+.docs span.no{background:var(--bad-50);color:var(--bad)}
+.vthumb{width:40px;height:40px;border-radius:10px;object-fit:cover;flex:none}
+.atoast{position:absolute;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;z-index:9;animation:drop .25s var(--ease);max-width:340px;display:flex;gap:10px;align-items:center;box-shadow:var(--sh-3)}
+.atoast .i{color:#7FD3A0}
+.chips2{display:flex;gap:6px;flex-wrap:wrap}
+.chips2 span{height:28px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:var(--sunken);color:var(--muted)}
+.chips2 span.on{background:var(--ok-50);color:var(--ok)}
+.policy{display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.5}
+.policy div{display:grid;grid-template-columns:20px 1fr;gap:8px}
+.policy .i{color:var(--muted);margin-top:2px}
+
+/* ---------- money modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,8,7,.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;animation:fade .2s}
+.modal .in{background:var(--surface);border-radius:20px;max-width:780px;width:100%;max-height:90vh;overflow:auto;padding:28px;color:var(--ink)}
+.modal h2{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.modal .lead{color:var(--muted);font-size:14.5px;line-height:1.55;margin-top:6px;max-width:62ch}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}
+.flow div{border:1px solid var(--line);border-radius:var(--r);padding:14px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.flow .n{width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;margin-bottom:10px}
+.flow b{display:block;color:var(--ink);font-size:14px;margin-bottom:4px}
+.modal table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+.modal td,.modal th{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+.modal th{font-size:12px;color:var(--muted);font-weight:600}
+.example{margin-top:16px;background:var(--sunken);border-radius:var(--r);padding:14px 16px;font-size:14px;line-height:1.55}
+body.solo{background:#E9E5E0}
+body.solo .top,body.solo .guide,body.solo .feedbar,body.solo .lbl{display:none}
+body.solo #canvas{transform:none!important;width:auto;padding:20px;justify-content:center}
+body.solo #wrap{height:auto!important}
+body.solo-c #col-v,body.solo-c #col-a,body.solo-v #col-c,body.solo-v #col-a,body.solo-a #col-c,body.solo-a #col-v{display:none}
+body.solo .phone,body.solo .browser{box-shadow:0 0 0 1px #2E2A27,0 12px 30px rgba(0,0,0,.18)}
+@media (max-width:999px){.gsteps{grid-template-columns:repeat(4,minmax(0,1fr))}.gs:nth-child(4n){border-right:0}.gs{border-bottom:1px solid var(--page-line)}.fl{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.gsteps{grid-template-columns:repeat(2,minmax(0,1fr))}.gs:nth-child(2n){border-right:0}.top{padding-left:16px;padding-right:16px}.guide,.feedbar{margin-left:16px;margin-right:16px}.flow{grid-template-columns:1fr}.top .sp{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><div class="logo-mk" id="logoMk"></div><div><b>Tentwala</b><span>Tent house booking · live simulation of all three apps</span></div></div>
+  <div class="sp"></div>
+  <a class="tbtn" href="Tentwala-Product-Manual.pdf" target="_blank" rel="noopener" id="manualBtn" style="text-decoration:none"></a>
+  <button class="tbtn" data-a="gModel" id="moneyBtn"></button>
+  <button class="tbtn" data-a="gReset" id="resetBtn"></button>
+</header>
+<section class="guide" id="guide" aria-label="Guided demo"></section>
+<div id="wrap"><div id="canvas">
+  <div class="col" id="col-c" style="--gc:var(--c-cust)"><div class="lbl"><i style="background:var(--c-cust)"></i>Customer app <span>Rohit Sharma · Jodhpur</span></div>
+    <div class="phone"><div class="screen" id="cust"></div></div></div>
+  <div class="col vapp" id="col-v" style="--gc:var(--c-vend)"><div class="lbl"><i style="background:var(--c-vend)"></i>Vendor app <span>Tent house partner</span></div>
+    <div class="phone"><div class="screen" id="vend"></div></div></div>
+  <div class="col" id="col-a" style="--gc:var(--c-adm)"><div class="lbl"><i style="background:var(--c-adm)"></i>Admin dashboard <span>Tentwala operations</span></div>
+    <div class="browser"><div class="chrome"><i style="background:#EC6A5E"></i><i style="background:#F4BF4F"></i><i style="background:#61C554"></i><div class="url" id="url"></div></div><div class="adm" id="adm"></div></div></div>
+</div></div>
+<section class="feedbar" aria-label="Messages"><h2 id="feedH"></h2><div class="fl" id="feed"></div></section>
+<div id="modal"></div>
+
+<script>
+/* ============ ICONS (Lucide-style, 24 grid, 2px stroke) ============ */
+const ICONS={
+home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+list:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>',
+help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+left:'<path d="m15 18-6-6 6-6"/>',right:'<path d="m9 18 6-6-6-6"/>',down:'<path d="m6 9 6 6 6-6"/>',
+star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',
+checkc:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
+truck:'<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+pkg:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+cal:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+wallet:'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+stock:'<path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12M6 14h12"/><rect width="12" height="12" x="6" y="10"/>',
+plus:'<path d="M5 12h14M12 5v14"/>',minus:'<path d="M5 12h14"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',
+spark:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/>',
+scale:'<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+cash:'<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+reset:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+play:'<path d="M6 3l14 9-14 9z"/>',pause:'<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
+info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+trend:'<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
+dash:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+store:'<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4M2 7h20M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-2-1 2.7 2.7 0 0 1-2 1 2.7 2.7 0 0 1-2-1 2.7 2.7 0 0 1-2 1 2.7 2.7 0 0 1-2-1 2.7 2.7 0 0 1-2 1 2.7 2.7 0 0 1-2-1 2.7 2.7 0 0 1-2 1 2 2 0 0 1-2-2V7"/>',
+bank:'<path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2l8 5H4z"/>',
+rupee:'<path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3c6.67 0 6.67-10 0-10"/>',
+zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+tent:'<path d="M3.5 21 14 3M20.5 21 10 3M15.5 21 12 15l-3.5 6M2 21h20"/>',
+heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+food:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+book:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+cake:'<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01"/>',
+mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>',
+send:'<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+signal:'<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
+battery:'<rect width="16" height="10" x="2" y="7" rx="2"/><path d="M22 11v2M6 11v2"/>',
+lockk:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+ret:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8M10 9H8"/>',
+map:'<path d="M14.1 6 9.9 3.9a2 2 0 0 0-1.8 0L3.6 6.1A1 1 0 0 0 3 7v13a1 1 0 0 0 1.4.9L8.1 19a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.2A1 1 0 0 0 21 18V5a1 1 0 0 0-1.4-.9L15.9 6a2 2 0 0 1-1.8 0z"/><path d="M15 5.8v15M9 3.2v15"/>'
+};
+const ic=(n,s=20,c='')=>`<svg class="i ${c}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
+const star=(s=14)=>ic('star',s,'fill');
+const im=n=>'img/'+n+'.webp';
+
+/* ============ DATA ============ */
+const TODAY='2026-11-13';
+const CITIES=['Jodhpur','Jaipur','Udaipur','Kota','Bikaner','Ajmer'];
+const EVENTS=[
+ {id:'wedding',hi:'शादी',n:'Wedding',ic:'heart'},{id:'jagran',hi:'जागरण',n:'Jagran',ic:'flame'},{id:'bhoj',hi:'भोज',n:'Bhoj',ic:'food'},
+ {id:'katha',hi:'कथा-पूजा',n:'Katha',ic:'book'},{id:'bday',hi:'जन्मदिन',n:'Birthday',ic:'cake'},{id:'corp',hi:'सभा / मेला',n:'Sabha',ic:'mic'}];
+const CATS=[{id:'all',n:'All items'},{id:'tent',n:'Pandal'},{id:'seat',n:'Seating'},{id:'stage',n:'Stage & decor'},{id:'utensil',n:'Utensils'},{id:'light',n:'Light & sound'},{id:'cool',n:'Cooling & power'}];
+// key, cat, name, hindi, unit, price/day, stock, replacement value
+const TPL=[
+ ['maha','tent','Maharaja Pandal 40×60 ft','महाराजा पंडाल','pandal',18000,3,70000],
+ ['hang','tent','German Hangar 30×60 ft','जर्मन हैंगर','hangar',12000,4,50000],
+ ['chair','seat','Cushion Chair','कुशन कुर्सी','chair',10,800,450],
+ ['bchair','seat','Banquet Chair with Cover','बैंक्वेट कुर्सी','chair',22,300,900],
+ ['gadda','seat','Gadda-Takiya Seating','गद्दा-तकिया','set',60,250,500],
+ ['sofa','seat','VIP Stage Sofa','वीआईपी सोफा','set',1500,6,12000],
+ ['table','seat','Round Table, 6 seater','गोल टेबल','table',150,90,3000],
+ ['carpet','stage','Red Carpet, 100 sq ft','लाल कारपेट','100 sq ft',500,120,3000],
+ ['stage','stage','Stage 20×16 with Backdrop','मंच और बैकड्रॉप','stage',9000,2,40000],
+ ['mandap','stage','Floral Mandap','फूलों का मंडप','mandap',15000,2,60000],
+ ['gate','stage','Swagat Gate','स्वागत द्वार','gate',3500,3,15000],
+ ['thali','utensil','Steel Thali Set','स्टील थाली सेट','set',6,1500,120],
+ ['degchi','utensil','Catering Utensils, 100 guests','हलवाई बर्तन सेट','set',1800,20,8000],
+ ['light','light','Pandal Lighting, 10 ft','पंडाल लाइटिंग','10 ft',300,150,2000],
+ ['dj','light','DJ with 4-Box Sound','डीजे साउंड','set',7000,3,45000],
+ ['cooler','cool','Industrial Fan Cooler','कूलर पंखा','unit',400,40,9000],
+ ['gen','cool','Generator 30 kVA','जनरेटर','day',5500,2,200000]];
+const UNITSTEP=k=>['chair','bchair','thali','gadda'].includes(k)?10:1;
+const MONTHS=[['Apr',38],['May',52],['Jun',31],['Jul',9],['Aug',7],['Sep',6],['Oct',14],['Nov',61],['Dec',74],['Jan',48],['Feb',66],['Mar',22]];
+const HOLD=['accepted','confirmed','dispatched','delivered','returned'];
+const PAID=['confirmed','dispatched','delivered','returned','settled'];
+const ST={requested:['Awaiting vendor','s-req'],accepted:['Pay advance','s-acc'],confirmed:['Confirmed','s-conf'],dispatched:['On the way','s-disp'],
+ delivered:['Delivered','s-del'],returned:['Return check','s-ret'],settled:['Settled','s-set'],declined:['Declined','s-x'],cancelled:['Cancelled','s-x']};
+const STV={requested:'New request',accepted:'Awaiting payment',confirmed:'Confirmed',dispatched:'On the way',delivered:'Delivered',returned:'Return check',settled:'Settled',declined:'Declined',cancelled:'Cancelled'};
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s);
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const lakh=n=>n>=1e7?'₹'+(n/1e7).toFixed(2)+' Cr':n>=1e5?'₹'+(n/1e5).toFixed(2)+' L':inr(n);
+const QS=new URLSearchParams(location.search);
+const FAST=QS.has('step'), SOLO=QS.get('solo');
+const sleep=ms=>new Promise(r=>setTimeout(r,FAST?0:ms));
+const addDays=(d,n)=>{const x=new Date(d+'T00:00:00Z');x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
+const fd=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-IN',{day:'numeric',month:'short',timeZone:'UTC'});
+const fdw=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+const daysBetween=(a,b)=>Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/864e5);
+const P=id=>S.products.find(p=>p.id===id);
+const Vd=id=>S.vendors.find(v=>v.id===id);
+const B=id=>S.bookings.find(b=>b.id===id);
+const EV=id=>EVENTS.find(e=>e.id===id);
+const pill=s=>`<span class="pill ${ST[s][1]}">${ST[s][0]}</span>`;
+const vpill=s=>`<span class="pill ${ST[s][1]}">${STV[s]}</span>`;
+const initials=n=>n.split(' ').map(x=>x[0]).slice(0,2).join('');
+const clockStr=()=>{const d=new Date(S.clock);return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',timeZone:'UTC'})+', '+d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',timeZone:'UTC'})};
+const tick=m=>{S.clock+=m*60000};
+const setClock=(d,h,m=0)=>{const t=Date.parse(d+'T00:00:00Z')+h*3600000+m*60000;if(t>S.clock)S.clock=t};
+const clockDate=()=>new Date(S.clock).toISOString().slice(0,10);
+const vendorProducts=vid=>S.products.filter(p=>p.vid===vid);
+
+let S, timers={};
+function mkProducts(vid,mult,skip=[]){
+  TPL.forEach((t,i)=>{ if(skip.includes(t[0]))return;
+    const price=t[5]>=100?Math.round(t[5]*mult/50)*50:Math.max(1,Math.round(t[5]*mult));
+    S.products.push({id:vid+'-'+t[0],vid,key:t[0],cat:t[1],name:t[2],hi:t[3],unit:t[4],price,stock:Math.round(t[6]*(0.7+((i*7+vid.length*3)%6)/10)),replace:t[7],active:true});
+  });
+}
+function autoItems(vid,G,type){
+  const has=k=>S.products.find(p=>p.vid===vid&&p.key===k&&p.active);
+  const want={
+    maha:G>=300?Math.ceil(G/500):0, hang:G<300?1:0,
+    chair:type==='jagran'?Math.round(G*0.2/10)*10:Math.round(G*0.6/10)*10,
+    gadda:type==='jagran'||type==='katha'?Math.round(G*0.5/10)*10:0,
+    table:['wedding','bhoj','bday','corp'].includes(type)?Math.ceil(G*0.35/6):0,
+    thali:['wedding','bhoj','jagran'].includes(type)?Math.round(G/10)*10:0,
+    degchi:['wedding','bhoj','jagran'].includes(type)?Math.ceil(G/100):0,
+    light:Math.ceil(G/20), cooler:Math.ceil(G/70), carpet:Math.ceil(G/12),
+    stage:['wedding','jagran','corp','bday'].includes(type)?1:0, mandap:type==='wedding'?1:0,
+    gate:['wedding','corp'].includes(type)?1:0, sofa:type==='wedding'?2:0,
+    dj:['wedding','jagran','bday'].includes(type)?1:0, gen:G>=250?1:0};
+  const out={};
+  Object.entries(want).forEach(([k,q])=>{ const p=has(k); if(p&&q>0) out[p.id]=Math.min(q,p.stock); });
+  if(!Object.keys(out).some(id=>P(id).cat==='tent')){ const t=S.products.find(p=>p.vid===vid&&p.cat==='tent'); if(t) out[t.id]=1; }
+  return out;
+}
+function quote(vid,items,days){
+  const v=Vd(vid), st=S.settings;
+  const subtotal=Object.entries(items).reduce((s,[pid,q])=>s+P(pid).price*q,0)*days;
+  const delivery=v.delivery, itemsTotal=subtotal+delivery, fee=st.fee;
+  const advance=Math.round(itemsTotal*st.adv/100), deposit=Math.round(subtotal*st.dep/100), commission=Math.round(subtotal*st.comm/100);
+  return {subtotal,delivery,itemsTotal,fee,advance,deposit,commission,balance:itemsTotal-advance,payNow:advance+deposit+fee,grand:itemsTotal+fee,comm:st.comm,adv:st.adv,dep:st.dep,days};
+}
+function booked(pid,date,days,exclude){
+  let n=0; const e=addDays(date,days-1);
+  S.bookings.forEach(b=>{ if(b.id===exclude||!HOLD.includes(b.status))return;
+    const be=addDays(b.event.date,b.event.days-1);
+    if(b.event.date<=e&&date<=be){ const it=b.items.find(i=>i.pid===pid); if(it) n+=it.qty; }});
+  return n;
+}
+const avail=(p,date,days,ex)=>p.stock-booked(p.id,date,days,ex);
+
+function seed(){
+  S={clock:Date.parse(TODAY+'T10:05:00Z'),settings:{comm:8,fee:99,adv:30,dep:10,instant:1},
+    vendors:[],products:[],bookings:[],ledger:[],feed:[],disputes:[],rev:0,nextB:1041,
+    base:{rev:3812000,bookings:1268},
+    cust:{name:'Rohit Sharma',phone:'98290 41xxx',city:'Jodhpur',event:{type:'wedding',date:'2026-11-28',days:2,guests:400,venue:'Shree Ganesh Marriage Garden, Pal Road'},cart:{vid:null,items:{}}},
+    ui:{c:{stack:[{s:'home'}],tab:'home',cat:'all',pay:null,toast:null},
+        v:{vid:null,stack:[{s:'onboard'}],tab:'home',cat:'all',toast:null,otp:'',ret:{},kyc:{aadhaar:true,pan:true,shop:true,godown:false,bank:false},
+           form:{name:'Ramdev Tent & Decor',hi:'रामदेव टेंट एंड डेकोर',owner:'Bhanwar Lal Choudhary',phone:'98291 77xxx',city:'Jodhpur',area:'Pal Road',years:'11'},
+           pick:['maha','hang','chair','gadda','table','thali','degchi','light','cooler','carpet','stage','mandap','gate','sofa','dj','gen'],vehicle:'RJ19 GB 4471 · Tata 407'},
+        a:{view:'overview',sel:null,toast:null,flash:false}},
+    demo:{i:0,bid:null,running:false}};
+  const V=(id,name,hi,owner,city,area,years,events,rating,reviews,delivery,img,status,kyc)=>
+    S.vendors.push({id,name,hi,owner,city,area,years,events,rating,reviews,delivery,img,status,kyc,wallet:{avail:0,paid:0,cash:0},payouts:[]});
+  const K=(a,b,c,d,e)=>({aadhaar:a,pan:b,shop:c,godown:d,bank:e});
+  V('v1','Shree Balaji Tent House','श्री बालाजी टेंट हाउस','Mahesh Agarwal','Jaipur','Malviya Nagar',14,212,4.7,186,900,'cover-balaji','live',K(1,1,1,1,1));
+  V('v2','Maharana Tent & Decor','महाराणा टेंट एंड डेकोर','Lokendra Singh','Udaipur','Hiran Magri',19,340,4.8,295,1200,'cover-maharana','live',K(1,1,1,1,1));
+  V('v3','Rajputana Shamiyana','राजपूताना शामियाना','Vikram Singh Rathore','Jodhpur','Sardarpura',22,410,4.6,352,1100,'cover-rajputana','live',K(1,1,1,1,1));
+  V('v5','Marudhar Light & Tent','मरुधर लाइट एंड टेंट','Sohan Lal Prajapat','Jodhpur','Basni',8,96,4.3,71,800,'cover-marudhar','live',K(1,1,1,1,1));
+  V('v6','Mewar Event Co.','मेवाड़ इवेंट कंपनी','Hitesh Paliwal','Udaipur','Sukher',5,0,0,0,1000,'cover-mewar','pending',K(1,1,1,0,1));
+  mkProducts('v1',1); mkProducts('v2',1.2,['gadda']); mkProducts('v3',1.1,['dj']); mkProducts('v5',0.9,['maha','mandap','sofa']); mkProducts('v6',1,[]);
+  const hist=[['v3','Prakash Bhati','wedding','2026-11-28',2,350,'confirmed'],['v1','Neha Khandelwal','wedding','2026-11-22',1,500,'settled'],
+    ['v2','Arjun Mehta','corp','2026-11-15',1,250,'delivered'],['v5','Kailash Choudhary','jagran','2026-11-20',1,300,'confirmed'],['v3','Sunita Bishnoi','bhoj','2026-11-08',1,600,'settled']];
+  hist.forEach(([vid,cust,type,date,days,G,status])=>{
+    const items=autoItems(vid,G,type), q=quote(vid,items,days);
+    S.bookings.push({id:'TW-'+(S.nextB++),vid,cust,phone:'9xxxx',items:Object.entries(items).map(([pid,qty])=>({pid,qty})),event:{type,date,days,guests:G,venue:'—',city:Vd(vid).city},
+      q,status,timeline:[],seed:true,shortage:0,balPaid:q.balance,payMode:'upi',fromDep:0,refund:q.deposit,rating:status==='settled'?5:0});
+  });
+}
+
+/* ============ PLATFORM "BACKEND" ============ */
+function feed(to,ch,msg,toastIt=true){S.feed.unshift({to,ch,msg,t:clockStr()});if(toastIt)toast(to,msg,ch)}
+function toast(app,msg,ch){
+  if(SOLO&&!QS.has('toast'))return;
+  S.ui[app].toast={msg,ch:ch||'Tentwala'};
+  clearTimeout(timers[app]); timers[app]=setTimeout(()=>{S.ui[app].toast=null;render()},4200);
+}
+function tl(b,msg){b.timeline.push({t:clockStr(),msg})}
+function led(b,type,amt,esc,acct){S.ledger.unshift({t:clockStr(),bid:b?b.id:'—',type,amt,esc,acct:acct||''})}
+const escrowBal=()=>S.ledger.reduce((s,l)=>s+l.esc,0);
+function glow(app){const el=$('#col-'+app);if(!el||SOLO)return;el.classList.add('glow');setTimeout(()=>el.classList.remove('glow'),1600)}
+function flashAdmin(){S.ui.a.flash=true;setTimeout(()=>{S.ui.a.flash=false;render()},1300)}
+
+const H={
+cEvent(id){S.cust.event.type=id;render()},
+cGuests(d){const e=S.cust.event;e.guests=Math.max(25,Math.min(3000,e.guests+ +d));render()},
+cDays(d){const e=S.cust.event;e.days=Math.max(1,Math.min(5,e.days+ +d));render()},
+cOpenV(vid){S.ui.c.stack.push({s:'vendor',id:vid});S.ui.c.cat='all';render()},
+cCat(c){S.ui.c.cat=c;render()},
+back(app){const st=S.ui[app].stack;if(st.length>1)st.pop();render()},
+cTab(t){S.ui.c.tab=t;S.ui.c.stack=[{s:t}];render()},
+cQty(pid,d){
+  const p=P(pid), cart=S.cust.cart, e=S.cust.event;
+  if(cart.vid&&cart.vid!==p.vid&&Object.keys(cart.items).length){cart.items={};toast('c','Cart cleared. One tent house per booking keeps delivery and counting simple.')}
+  cart.vid=p.vid; const cur=cart.items[pid]||0; const max=avail(p,e.date,e.days);
+  let n=Math.max(0,Math.min(max,cur+ +d)); if(n===0)delete cart.items[pid]; else cart.items[pid]=n;
+  if(cur+ +d>max) toast('c',`Only ${max} available on ${fd(e.date)}.`);
+  render();
+},
+cAuto(){
+  const top=S.ui.c.stack.at(-1); const vid=top.id||S.cust.cart.vid; const e=S.cust.event;
+  const items=autoItems(vid,e.guests,e.type);
+  Object.keys(items).forEach(pid=>{items[pid]=Math.min(items[pid],avail(P(pid),e.date,e.days))});
+  S.cust.cart={vid,items}; toast('c',`Added ${Object.keys(items).length} items for ${e.guests} guests. Adjust any quantity.`,'Smart estimate');render();
+},
+cGoCart(){S.ui.c.stack.push({s:'cart'});render()},
+cSend(){
+  const c=S.cust, cart=c.cart; if(!cart.vid||!Object.keys(cart.items).length)return;
+  const v=Vd(cart.vid); const q=quote(cart.vid,cart.items,c.event.days);
+  const b={id:'TW-'+(S.nextB++),vid:cart.vid,cust:c.name,phone:c.phone,items:Object.entries(cart.items).map(([pid,qty])=>({pid,qty})),
+    event:{...c.event,city:c.city},q,status:'requested',timeline:[],shortage:0,isNew:true};
+  S.bookings.unshift(b); tick(3); tl(b,'Booking request sent to '+v.name);
+  S.cust.cart={vid:null,items:{}}; S.demo.bid=b.id;
+  S.ui.c.stack=[{s:'bookings'},{s:'booking',id:b.id}]; S.ui.c.tab='bookings';
+  feed('v','Push',`New booking: ${b.cust}, ${EV(b.event.type).n}, ${fd(b.event.date)}, ${inr(q.itemsTotal)}`);
+  feed('c','WhatsApp',`Request ${b.id} sent to ${v.name}. Most vendors reply within 30 minutes.`,false);
+  render(); glow('v');
+},
+cOpenB(id){S.ui.c.stack.push({s:'booking',id});render()},
+cPay(id){S.ui.c.pay={id,proc:false};render()},
+cPayClose(){S.ui.c.pay=null;render()},
+async cPayGo(app){
+  const pay=S.ui.c.pay; if(!pay||pay.proc)return; pay.proc=app; render(); await sleep(1300);
+  const b=B(pay.id); S.ui.c.pay=null; payAdvance(b,app);
+},
+cSettle(id,mode){settle(B(id),mode)},
+cDispute(id){
+  const b=B(id); b.disputed=true; tick(4); tl(b,'Customer disputed the return count. Money frozen in escrow.');
+  const miss=b.items.reduce((s,i)=>s+i.qty-(i.ret??i.qty),0);
+  S.disputes.unshift({bid:id,by:b.cust,vid:b.vid,text:`Customer says the ${miss} items marked missing were returned. Vendor claims ${inr(b.shortage)}.`,status:'open',t:clockStr()});
+  feed('a','Alert',`Dispute on ${id}: ${inr(b.shortage)} shortage contested`); feed('v','WhatsApp',`${id}: the customer contested the count. Tentwala support will call within 2 hours.`,false);
+  render(); glow('a');
+},
+cRate(id,n){const b=B(id);if(b.rating)return;b.rating=+n;const v=Vd(b.vid);v.rating=v.reviews?((v.rating*v.reviews+ +n)/(v.reviews+1)):+n;v.reviews++;v.events++;
+  tl(b,`Customer rated ${n} stars`);feed('v','Push',`${b.cust} rated you ${n} stars.`);render()},
+cCancel(id){cancelBooking(B(id))},
+vKyc(k){const kyc=S.ui.v.kyc;kyc[k]=!kyc[k];render()},
+vPick(k){const p=S.ui.v.pick;const i=p.indexOf(k);if(i>=0)p.splice(i,1);else p.push(k);render()},
+vSubmit(){
+  const f=S.ui.v.form, ui=S.ui.v; Object.keys(ui.kyc).forEach(k=>ui.kyc[k]=true);
+  const id='v4';
+  S.vendors.push({id,name:f.name,hi:f.hi,owner:f.owner,city:f.city,area:f.area,years:+f.years||1,events:0,rating:0,reviews:0,delivery:1000,img:'cover-ramdev',
+    status:'pending',kyc:{...ui.kyc},wallet:{avail:0,paid:0,cash:0},payouts:[],fresh:true});
+  mkProducts(id,0.95,TPL.map(t=>t[0]).filter(k=>!ui.pick.includes(k)));
+  ui.vid=id; ui.stack=[{s:'pending'}]; tick(6);
+  feed('a','Alert',`New vendor KYC: ${f.name}, ${f.city}. ${ui.pick.length} items listed.`);
+  feed('v','SMS',`Thank you ${f.owner.split(' ')[0]} ji. Your KYC is under review. Field visit tomorrow at 11 am.`,false);
+  render(); glow('a');
+},
+vLogin(){S.ui.v.vid='v3';S.ui.v.stack=[{s:'home'}];S.ui.v.tab='home';render()},
+vTab(t){S.ui.v.tab=t;S.ui.v.stack=[{s:t}];render()},
+vOpenB(id){S.ui.v.stack.push({s:'order',id});S.ui.v.otp='';render()},
+vAccept(id){
+  const b=B(id); const short=b.items.filter(i=>avail(P(i.pid),b.event.date,b.event.days,b.id)<i.qty);
+  if(short.length){toast('v','Not enough stock: '+short.map(i=>P(i.pid).name).join(', '));render();return}
+  b.status='accepted'; tick(12); tl(b,'Vendor accepted. Stock blocked for '+fd(b.event.date)+'.');
+  feed('c','WhatsApp',`${Vd(b.vid).name} confirmed stock for ${fd(b.event.date)}. Pay ${inr(b.q.payNow)} to lock your booking.`);
+  render(); glow('c');
+},
+vDecline(id){const b=B(id);b.status='declined';tick(5);tl(b,'Vendor declined: stock not free.');feed('c','WhatsApp',`${Vd(b.vid).name} couldn't take ${b.id}. We've suggested two similar tent houses nearby.`);render()},
+vDispatch(id){
+  const b=B(id); b.status='dispatched'; b.vehicle=S.ui.v.vehicle; b.otp=String(1000+Math.floor(Math.random()*9000));
+  setClock(addDays(b.event.date,-1),16,30); tl(b,`Dispatched in ${b.vehicle} with 6 crew.`);
+  feed('c','SMS',`Your items for ${b.id} are on the way (${b.vehicle}). Delivery OTP ${b.otp}. Share it only after the items arrive.`);
+  render(); glow('c');
+},
+vOtp(id){
+  const b=B(id); const val=(S.ui.v.otp||'').trim();
+  if(val!==b.otp){toast('v','Incorrect OTP. Ask the customer to read it again.');render();return}
+  deliver(b);
+},
+vRetOpen(id){const b=B(id);S.ui.v.ret={};b.items.forEach(i=>S.ui.v.ret[i.pid]=i.qty);S.ui.v.stack.push({s:'return',id});render()},
+vRet(pid,d){const r=S.ui.v.ret;const b=B(S.ui.v.stack.at(-1).id);const it=b.items.find(i=>i.pid===pid);r[pid]=Math.max(0,Math.min(it.qty,r[pid]+ +d));render()},
+vRetSubmit(id){
+  const b=B(id); let sh=0; b.items.forEach(i=>{i.ret=S.ui.v.ret[i.pid];sh+=(i.qty-i.ret)*P(i.pid).replace});
+  b.shortage=sh; b.status='returned'; setClock(addDays(b.event.date,b.event.days),10,15);
+  tl(b,`Pickup done. Return count submitted${sh?', shortage '+inr(sh):', all items returned'}.`);
+  S.ui.v.stack.pop();
+  feed('c','WhatsApp',`Return count for ${b.id} is ready. ${sh?'Missing items: '+inr(sh)+', taken from your deposit. ':'All items returned. '}Please confirm and pay the balance of ${inr(b.q.balance)}.`);
+  render(); glow('c');
+},
+vStock(pid,d){const p=P(pid);p.stock=Math.max(0,p.stock+ +d*UNITSTEP(p.key));render()},
+vToggle(pid){const p=P(pid);p.active=!p.active;render()},
+vInstant(){
+  const v=Vd(S.ui.v.vid); if(!v.wallet.avail)return; const fee=Math.round(v.wallet.avail*S.settings.instant/100);
+  payout(v,v.wallet.avail-fee,'Instant (T+0)'); S.rev+=fee; led(null,`Instant payout fee · ${v.name}`,fee,0,'rev');
+  render();
+},
+vCat(c){S.ui.v.cat=c;render()},
+aView(v){S.ui.a.view=v;S.ui.a.sel=null;render()},
+aApprove(vid){const v=Vd(vid);v.status='live';Object.keys(v.kyc).forEach(k=>v.kyc[k]=1);tick(40);
+  feed('v','WhatsApp',`Congratulations, ${v.name} is now live on Tentwala. Customers in ${v.city} can book you.`);
+  if(S.ui.v.vid===vid){S.ui.v.stack=[{s:'home'}];S.ui.v.tab='home'}
+  toast('a',`${v.name} approved and live in ${v.city}`);render();glow('v')},
+aReject(vid){const v=Vd(vid);v.status='rejected';feed('v','SMS',`${v.name}: the godown photo is missing. Please upload it to continue.`,false);toast('a','Sent back for re-upload');render()},
+aSel(id){S.ui.a.sel=id;render()},
+aClose(){S.ui.a.sel=null;render()},
+aResolve(id,who){
+  const b=B(id), d=S.disputes.find(x=>x.bid===id&&x.status==='open');
+  const old=b.shortage; if(who==='cust') b.shortage=0; else if(who==='split') b.shortage=Math.round(b.shortage/2);
+  b.disputed=false; b.disputeDone=true; d.status='resolved'; d.result={vendor:'Vendor claim upheld',cust:'Refund to customer',split:'Split 50/50'}[who];
+  tick(90); tl(b,`Support resolved the dispute: ${d.result} (shortage ${inr(old)} → ${inr(b.shortage)}).`);
+  feed('c','WhatsApp',`${id} resolved: ${d.result}. Missing-item charge is now ${inr(b.shortage)}.`);
+  feed('v','WhatsApp',`${id} resolved: ${d.result}.`,false);
+  render();
+},
+aPayout(vid){const v=Vd(vid);if(!v.wallet.avail)return;payout(v,v.wallet.avail,'T+1 settlement');render()},
+aPayAll(){S.vendors.forEach(v=>{if(v.wallet.avail)payout(v,v.wallet.avail,'T+1 settlement')});render()},
+aSave(){
+  ['comm','fee','adv','dep'].forEach(k=>{const el=document.getElementById('set-'+k);if(el)S.settings[k]=Math.max(0,+el.value||0)});
+  toast('a','Settings saved. They apply to new bookings.');render();
+},
+gModel(){$('#modal').innerHTML=modelHtml()},
+gCloseModal(){$('#modal').innerHTML=''},
+gReset(){if(S.demo.running)return;Object.values(timers).forEach(clearTimeout);seed();render()},
+async gNext(){if(S.demo.running)return;S.demo.running=true;render();try{await runStep()}finally{S.demo.running=false;render()}},
+async gAuto(){
+  if(S.demo.running){S.demo.stop=true;return}
+  S.demo.running=true;S.demo.stop=false;render();
+  try{while(S.demo.i<STEPS.length&&!S.demo.stop){await runStep();await sleep(2600)}}finally{S.demo.running=false;S.demo.stop=false;render()}
+}
+};
+const IN={otp:v=>S.ui.v.otp=v, venue:v=>S.cust.event.venue=v,
+  f_name:v=>S.ui.v.form.name=v,f_owner:v=>S.ui.v.form.owner=v,f_phone:v=>S.ui.v.form.phone=v,f_area:v=>S.ui.v.form.area=v,f_years:v=>S.ui.v.form.years=v};
+const CH={
+  city:v=>{S.cust.city=v;S.ui.c.stack=[{s:'home'}];render()},
+  evDate:v=>{if(v)S.cust.event.date=v;render()},
+  vSwitch:v=>{S.ui.v.vid=v;S.ui.v.stack=[{s:'home'}];S.ui.v.tab='home';render()},
+  f_city:v=>{S.ui.v.form.city=v}, vehicle:v=>{S.ui.v.vehicle=v},
+  price:(v,el)=>{const p=P(el.dataset.pid);p.price=Math.max(1,+v||p.price);render()}
+};
+
+function payAdvance(b,app){
+  b.status='confirmed'; b.paidVia=app; tick(9);
+  tl(b,`Advance ${inr(b.q.advance)}, deposit ${inr(b.q.deposit)} and fee ${inr(b.q.fee)} paid via ${app} into Tentwala escrow.`);
+  led(b,'Customer advance, deposit and fee into escrow',b.q.payNow,b.q.payNow);
+  feed('v','WhatsApp',`${b.id} confirmed. ${inr(b.q.advance)} advance is held in escrow. Deliver on ${fd(addDays(b.event.date,-1))}.`);
+  feed('c','SMS',`Payment of ${inr(b.q.payNow)} received. Booking ${b.id} confirmed.`,false);
+  feed('a','Event',`${b.id} confirmed, ${inr(b.q.payNow)} into escrow`,false);
+  flashAdmin(); render(); glow('v');
+}
+function deliver(b){
+  const v=Vd(b.vid); b.status='delivered'; tick(55);
+  const rel=b.q.advance-b.q.commission;
+  tl(b,'Delivered. OTP verified at the venue and item count matched.');
+  led(b,`Advance released to ${v.name} after ${b.q.comm}% commission`,rel,-rel,'vendor');
+  led(b,'Platform commission and customer fee earned',b.q.commission+b.q.fee,-(b.q.commission+b.q.fee),'rev');
+  v.wallet.avail+=rel; S.rev+=b.q.commission+b.q.fee;
+  feed('v','Push',`OTP verified. ${inr(rel)} added to your wallet. Payout to your bank tomorrow morning.`);
+  feed('c','WhatsApp',`Items delivered for ${b.id}. Wishing you a wonderful function.`);
+  S.ui.v.otp=''; flashAdmin(); render(); glow('c');
+}
+function settle(b,mode){
+  const v=Vd(b.vid), dep=b.q.deposit, fromDep=Math.min(b.shortage,dep), extra=b.shortage-fromDep, bal=b.q.balance+extra;
+  b.balPaid=bal; b.payMode=mode; b.refund=dep-fromDep; b.fromDep=fromDep; tick(20);
+  if(mode==='upi'){led(b,'Balance via UPI to vendor wallet',bal,0,'vendor');v.wallet.avail+=bal}
+  else{led(b,'Balance paid to vendor in cash (recorded)',bal,0,'cash');v.wallet.cash+=bal}
+  if(fromDep){led(b,'Missing items: deposit to vendor',fromDep,-fromDep,'vendor');v.wallet.avail+=fromDep}
+  if(b.refund)led(b,'Deposit refund to customer UPI',b.refund,-b.refund,'refund');
+  b.status='settled'; tl(b,`Settled. Balance ${inr(bal)} by ${mode==='upi'?'UPI':'cash'}, deposit refund ${inr(b.refund)}.`);
+  feed('c','SMS',`${b.id} closed. ${inr(b.refund)} deposit refunded to your UPI. Please rate ${v.name}.`);
+  feed('v','WhatsApp',`${b.id} settled. ${mode==='upi'?inr(bal)+' added to wallet':'Cash '+inr(bal)+' recorded'}${fromDep?', plus '+inr(fromDep)+' for missing items':''}.`);
+  flashAdmin(); render(); glow('v');
+}
+function payout(v,amt,how){
+  v.wallet.paid+=amt; v.wallet.avail=0; const utr='UTR'+Math.floor(1e9+Math.random()*9e9);
+  v.payouts.unshift({amt,how,utr,t:clockStr()}); led(null,`Payout to ${v.name}, bank ••4521 (${how})`,amt,0,'payout');
+  feed('v','SMS',`${inr(amt)} sent to your bank account ••4521. Ref ${utr}.`); toast('a',`Paid ${inr(amt)} to ${v.name}`);
+}
+function cancelBooking(b){
+  const v=Vd(b.vid);
+  if(b.status==='requested'||b.status==='accepted'){b.status='cancelled';tl(b,'Cancelled by customer before payment.');feed('v','Push',`${b.id} was cancelled before payment.`);render();return}
+  const left=daysBetween(clockDate(),b.event.date); tick(5);
+  if(left>=7){ const ref=b.q.advance+b.q.deposit; led(b,'Cancellation 7+ days out: refund minus fee',ref,-ref,'refund'); led(b,'Fee retained',b.q.fee,-b.q.fee,'rev'); S.rev+=b.q.fee;
+    tl(b,`Cancelled ${left} days before. Refund ${inr(ref)}.`);feed('c','SMS',`${b.id} cancelled. ${inr(ref)} refund within 2 working days.`);}
+  else{ const vs=Math.round(b.q.advance/2), ref=b.q.advance-vs+b.q.deposit; led(b,'Late cancellation: 50% advance to vendor',vs,-vs,'vendor'); v.wallet.avail+=vs;
+    led(b,'Refund to customer',ref,-ref,'refund'); led(b,'Fee retained',b.q.fee,-b.q.fee,'rev'); S.rev+=b.q.fee;
+    tl(b,`Late cancellation (${left} days). Vendor keeps ${inr(vs)}, refund ${inr(ref)}.`);feed('c','SMS',`${b.id} cancelled. ${inr(ref)} refunded.`);}
+  b.status='cancelled'; feed('v','WhatsApp',`${b.id} was cancelled by the customer. Stock released.`); render();
+}
+
+/* ============ PHONE CHROME ============ */
+function sbar(dark,bg){
+  const t=new Date(S.clock).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'UTC'});
+  return `<div class="sbar ${dark?'dark':''}" style="--sbg:${bg||'var(--surface)'}"><span class="num">${t}</span><span class="sic">${ic('signal',16)}${ic('battery',20)}</span></div>`;
+}
+function toastHtml(app){const t=S.ui[app].toast;if(!t)return'';return `<div class="toast" role="status" aria-live="polite"><div class="ti">${ic(app==='v'?'store':'tent',18)}</div><div style="flex:1;min-width:0"><div class="tt"><span>${t.ch}</span><span>now</span></div>${t.msg}</div></div>`}
+
+/* ============ CUSTOMER APP ============ */
+function rc(){
+  const ui=S.ui.c, top=ui.stack.at(-1); let body='',bar='',nav=true,sb=sbar();
+  if(top.s==='home') body=cHome();
+  else if(top.s==='vendor'){body=cVendor(top.id);nav=false;bar=cartBar(top.id);sb=sbar(true,'#000')}
+  else if(top.s==='cart'){const r=cCart();body=r[0];bar=r[1];nav=false}
+  else if(top.s==='booking'){body=cBooking(top.id);nav=false}
+  else if(top.s==='bookings') body=cBookings();
+  else if(top.s==='help') body=cHelp();
+  const myB=S.bookings.filter(b=>b.cust===S.cust.name&&['accepted','dispatched','returned'].includes(b.status)).length;
+  const navH=nav?`<nav class="tabbar">${[['home','home','Home'],['bookings','list','Bookings'],['help','help','Help']].map(([k,i,l])=>`<button class="${ui.tab===k?'on':''}" data-a="cTab|${k}" aria-current="${ui.tab===k}">${ic(i,22)}${l}${k==='bookings'&&myB?`<span class="bdg">${myB}</span>`:''}</button>`).join('')}</nav>`:'';
+  return {html:sb+`<div class="scroll">${body}</div>`+bar+navH+toastHtml('c')+(ui.pay?paySheet():''),key:top.s+(top.id||'')};
+}
+function cHome(){
+  const e=S.cust.event, c=S.cust;
+  const vs=S.vendors.filter(v=>v.status==='live'&&v.city===c.city).sort((a,b)=>(b.fresh?1:0)-(a.fresh?1:0)||b.rating-a.rating);
+  const pop=S.products.filter(p=>vs.some(v=>v.id===p.vid)&&['maha','chair','mandap','stage','sofa','light'].includes(p.key)).slice(0,8);
+  return `<header class="c-top">
+    <div class="row sbw"><label class="loc"><span class="k">${ic('pin',14)} Event city</span><span class="v"><select data-ch="city" aria-label="Event city">${CITIES.map(x=>`<option ${x===c.city?'selected':''}>${x}</option>`).join('')}</select>${ic('down',16)}</span></label>
+    <button class="ib" aria-label="Notifications" data-a="noop">${ic('bell')}</button></div>
+    <h1 class="greet">Namaste, Rohit</h1>
+    <p class="greet-sub">Tents, seating and decor for your function, from verified tent houses.</p>
+    <div class="search">${ic('search',18)}<span>Search pandal, chairs, mandap, DJ</span></div>
+  </header>
+  <div class="pad">
+    <div class="card">
+      <div class="card-h"><b>Plan your function</b><span class="hi">आपका कार्यक्रम</span></div>
+      <div class="evgrid">${EVENTS.map(ev=>`<button class="evb ${ev.id===e.type?'on':''}" data-a="cEvent|${ev.id}" aria-pressed="${ev.id===e.type}">${ic(ev.ic,22)}${ev.n}<small>${ev.hi}</small></button>`).join('')}</div>
+      <div class="fgrid">
+        <label class="field"><span class="l">${ic('cal',14)} Date</span><input type="date" data-ch="evDate" value="${e.date}" min="${addDays(TODAY,1)}"></label>
+        <div class="field"><span class="l">${ic('users',14)} Guests</span><div class="stepper"><button data-a="cGuests|-50" aria-label="Fewer guests">${ic('minus',16)}</button><span class="num">${e.guests}</span><button data-a="cGuests|50" aria-label="More guests">${ic('plus',16)}</button></div></div>
+      </div>
+    </div>
+    <div class="promo"><img src="${im('banner')}" alt="Marigold flowers"><div><span class="eyebrow">Wedding season 2026</span><b>Peak muhurat dates fill fast</b><span class="d">Book two weeks ahead. Your advance stays in escrow until delivery.</span></div></div>
+    <div class="sec-h"><h2>Verified tent houses</h2><span>${c.city} · ${vs.length} available</span></div>
+    <div class="stack12">${vs.length?vs.map(vCard).join(''):`<div class="empty"><div class="ei">${ic('tent',26)}</div><b>No tent houses in ${c.city} yet</b>We're onboarding vendors here. Check back soon.</div>`}</div>
+    ${pop.length?`<div class="sec-h"><h2>Popular for ${EV(e.type).n.toLowerCase()}s</h2><span>per day</span></div><div class="hscroll">${pop.map(p=>`<div class="mini" data-a="cOpenV|${p.vid}" role="button" tabindex="0"><img src="${im(p.key)}" alt="${p.name}" loading="lazy"><b>${p.name}</b><div class="p num">${inr(p.price)} <span>/ ${p.unit}</span></div></div>`).join('')}</div>`:''}
+    <div style="height:8px"></div>
+  </div>`;
+}
+function rateH(v){return v.reviews?`<span class="rate">${star(14)}${v.rating.toFixed(1)}<span>(${v.reviews})</span></span>`:`<span class="pill s-acc">New</span>`}
+function vCard(v){
+  const ps=vendorProducts(v.id), from=Math.min(...ps.filter(p=>p.key==='chair'||p.key==='bchair').map(p=>p.price),99);
+  return `<article class="vcard" data-a="cOpenV|${v.id}" role="button" tabindex="0">
+   <div class="vcover"><img src="${im(v.img)}" alt="${v.name} setup" loading="lazy"><span class="badge ver">${ic('shield',14)} Verified</span>${v.fresh?'<span class="badge new">New on Tentwala</span>':''}</div>
+   <div class="vbody"><div class="row sbw" style="align-items:flex-start"><h3>${v.name}</h3>${rateH(v)}</div><div class="hn">${v.hi}</div>
+   <div class="meta"><span>${ic('pin',14)}${v.area}</span><span>${ic('cal',14)}${v.years} yrs</span><span>${ic('checkc',14)}${v.events} functions</span></div>
+   <div class="vfoot"><div class="from">Chairs from<b class="num">${inr(from)}</b>/day</div>
+   <div class="row"><button class="ib" aria-label="Call ${v.name}" data-a="noop">${ic('phone',18)}</button><button class="ib" aria-label="Chat with ${v.name}" data-a="noop">${ic('chat',18)}</button></div></div></div></article>`;
+}
+function cVendor(vid){
+  const v=Vd(vid), e=S.cust.event, cat=S.ui.c.cat, cart=S.cust.cart;
+  const ps=vendorProducts(vid).filter(p=>p.active&&(cat==='all'||p.cat===cat));
+  return `<div class="cover"><img src="${im(v.img)}" alt="${v.name}"><button class="fab l" data-a="back|c" aria-label="Back">${ic('left')}</button><button class="fab r" data-a="noop" aria-label="Chat">${ic('chat',18)}</button></div>
+  <div class="sheetbody">
+    <div class="row sbw" style="align-items:flex-start"><div><h1 class="t1">${v.name}</h1><div class="muted hi small">${v.hi} · ${v.owner}</div></div>${rateH(v)}</div>
+    <div class="row muted small" style="margin-top:8px">${ic('pin',14)}${v.area}, ${v.city}<span style="margin-left:8px" class="row">${ic('shield',14)}KYC verified</span></div>
+    <div class="facts"><div><b class="num">${v.years}</b><span>Years</span></div><div><b class="num">${v.events}</b><span>Functions</span></div><div><b class="num">${inr(v.delivery)}</b><span>Delivery & setup</span></div></div>
+    <button class="estimate" data-a="cAuto"><span class="ei">${ic('spark')}</span><span style="flex:1"><b>Fill for ${e.guests} guests</b><span>Smart estimate · ${EV(e.type).n} · ${fd(e.date)} · ${e.days} day${e.days>1?'s':''}</span></span>${ic('right',18)}</button>
+    <div class="tabs" role="tablist">${CATS.filter(c=>c.id==='all'||vendorProducts(vid).some(p=>p.cat===c.id)).map(c=>`<button role="tab" class="${cat===c.id?'on':''}" data-a="cCat|${c.id}" aria-selected="${cat===c.id}">${c.n}</button>`).join('')}</div>
+    ${ps.map(p=>{const a=avail(p,e.date,e.days), q=cart.vid===vid?(cart.items[p.id]||0):0, st=UNITSTEP(p.key);
+      return `<div class="prow"><img class="pimg" src="${im(p.key)}" alt="${p.name}" loading="lazy"><div class="pinfo"><b>${p.name}</b><span class="hn">${p.hi}</span>
+        <div class="price num">${inr(p.price)} <small>/ ${p.unit} / day</small></div><span class="avail ${a<=0?'out':a<20?'low':''}">${a>0?`${a} free on ${fd(e.date)}`:'Booked out'}</span></div>
+        ${q?`<div class="qty"><button data-a="cQty|${p.id}|-${st}" aria-label="Decrease">${ic('minus',16)}</button><span class="num">${q}</span><button data-a="cQty|${p.id}|${st}" aria-label="Increase">${ic('plus',16)}</button></div>`:`<button class="add" data-a="cQty|${p.id}|${st}" ${a<=0?'disabled':''}>${ic('plus',14)}Add</button>`}</div>`}).join('')}
+  </div>`;
+}
+function cartBar(vid){
+  const cart=S.cust.cart; if(cart.vid!==vid||!Object.keys(cart.items).length)return'';
+  const q=quote(vid,cart.items,S.cust.event.days);
+  return `<div class="ctabar"><div class="sum">${Object.keys(cart.items).length} items · ${S.cust.event.days} day${S.cust.event.days>1?'s':''}<b class="num">${inr(q.itemsTotal)}</b></div><button class="btn" data-a="cGoCart">Review quote${ic('right',18)}</button></div>`;
+}
+function cCart(){
+  const c=S.cust, cart=c.cart, e=c.event;
+  if(!cart.vid) return [`<div class="subhdr"><button class="ib" data-a="back|c" aria-label="Back">${ic('left')}</button><div class="t"><b>Quote</b></div></div><div class="empty"><div class="ei">${ic('pkg',26)}</div><b>No items yet</b>Add items from a tent house to see a quote.</div>`,''];
+  const v=Vd(cart.vid), q=quote(cart.vid,cart.items,e.days);
+  const body=`<div class="subhdr"><button class="ib" data-a="back|c" aria-label="Back">${ic('left')}</button><div class="t"><b>Your quote</b><span>${v.name}</span></div></div>
+  <div class="pad stack12">
+   <div class="card"><div class="card-h"><b>${EV(e.type).n} · ${e.guests} guests</b><span class="hi">कोटेशन</span></div>
+    <div class="fgrid"><label class="field"><span class="l">${ic('cal',14)} Date</span><input type="date" data-ch="evDate" value="${e.date}" min="${addDays(TODAY,1)}"></label>
+    <div class="field"><span class="l">${ic('clock',14)} Days</span><div class="stepper"><button data-a="cDays|-1" aria-label="Fewer days">${ic('minus',16)}</button><span class="num">${e.days}</span><button data-a="cDays|1" aria-label="More days">${ic('plus',16)}</button></div></div></div>
+    <label class="field" style="margin-top:8px"><span class="l">${ic('pin',14)} Venue</span><input data-in="venue" value="${e.venue}"></label></div>
+   <div class="card"><div class="card-h"><b>Items</b><span>${Object.keys(cart.items).length} selected</span></div><div class="list">${Object.entries(cart.items).map(([pid,n])=>{const p=P(pid);return `<div class="li"><img class="thumb" src="${im(p.key)}" alt=""><div class="nm">${p.name}<small class="num">${inr(p.price)} × ${n} × ${e.days} day${e.days>1?'s':''}</small></div><div class="qty"><button data-a="cQty|${pid}|-${UNITSTEP(p.key)}" aria-label="Decrease">${ic('minus',14)}</button><span class="num">${n}</span><button data-a="cQty|${pid}|${UNITSTEP(p.key)}" aria-label="Increase">${ic('plus',14)}</button></div></div>`}).join('')}</div></div>
+   <div class="card"><div class="card-h"><b>Price details</b></div><div class="bill num">
+    <div class="r"><span>Rental, ${e.days} day${e.days>1?'s':''}</span><span>${inr(q.subtotal)}</span></div>
+    <div class="r"><span>Delivery, setup and pickup</span><span>${inr(q.delivery)}</span></div>
+    <div class="r"><span>Booking fee</span><span>${inr(q.fee)}</span></div>
+    <div class="r t"><span>Total</span><span>${inr(q.grand)}</span></div>
+    <div class="r sub"><span>Refundable security deposit (${q.dep}%)</span><span>${inr(q.deposit)}</span></div></div></div>
+   <div class="card"><div class="card-h"><b>When you pay</b></div><div class="sched num">
+    <div class="on"><span class="n">1</span><span>After the vendor accepts<small>${q.adv}% advance, deposit and fee</small></span><b>${inr(q.payNow)}</b></div>
+    <div><span class="n">2</span><span>At delivery<small>Share your OTP only</small></span><b>₹0</b></div>
+    <div><span class="n">3</span><span>After return<small>Balance by UPI or cash</small></span><b>${inr(q.balance)}</b></div></div></div>
+   <div class="trust">${ic('shield',20)}<div><b>Your money is protected.</b> The advance stays in Tentwala escrow and reaches the vendor only when you share the delivery OTP at the venue.</div></div>
+  </div>`;
+  return [body,`<div class="ctabar"><div class="sum">Nothing to pay now<b class="num">${inr(q.grand)}</b></div><button class="btn" data-a="cSend">${ic('send',18)}Send request</button></div>`];
+}
+const STAGES=[['requested','Requested'],['accepted','Accepted'],['confirmed','Paid'],['dispatched','On the way'],['delivered','Delivered'],['returned','Returned'],['settled','Settled']];
+function progressHtml(s){
+  const i=STAGES.findIndex(x=>x[0]===s); if(i<0)return'';
+  return `<div class="progress"><div class="pt"><span>Step ${i+1} of 7</span><b>${STAGES[i][1]}</b></div><div class="pbar">${STAGES.map((x,j)=>`<i class="${j<i||s==='settled'?'d':j===i?'c':''}"></i>`).join('')}</div><div class="plabels"><span>Request</span><span>Paid</span><span>Delivered</span><span>Settled</span></div></div>`;
+}
+const acard=(tone,icon,title,text,extra='',hero=false)=>`<div class="acard ${hero?'hero':''} ${tone}"><div class="ah"><span class="aic">${ic(icon)}</span><div><h3>${title}</h3><p>${text}</p></div></div>${extra}</div>`;
+function cBooking(id){
+  const b=B(id), v=Vd(b.vid), q=b.q; let act='';
+  switch(b.status){
+   case 'requested':act=acard('t-warn','clock',`Waiting for ${v.name}`,`They're checking stock for ${fd(b.event.date)}. Most vendors reply within 30 minutes. You pay nothing until they accept.`,`<button class="btn danger sm" data-a="cCancel|${id}">Cancel request</button>`);break;
+   case 'accepted':act=acard('','checkc','Stock confirmed. Lock your booking',`${v.name} has blocked your items. Pay the advance within 2 hours to confirm.`,`<button class="btn gold" data-a="cPay|${id}">${ic('lock',18)}Pay ${inr(q.payNow)} securely</button>`,true);break;
+   case 'confirmed':act=acard('t-ok','shield','Booking confirmed',`${inr(q.payNow)} is held in Tentwala escrow. Delivery and setup on ${fdw(addDays(b.event.date,-1))}, evening.`,`<button class="btn sec sm" data-a="cCancel|${id}">Cancel booking</button>`);break;
+   case 'dispatched':act=acard('t-teal','truck','Your items are on the way',`${b.vehicle} · Driver Mohan Lal · 6 crew · arriving in about 45 minutes. Share this OTP only after you've counted the items.`,`<div class="otp">${b.otp.split('').map(d=>`<span>${d}</span>`).join('')}</div>`);break;
+   case 'delivered':act=acard('t-ok','checkc','Delivered and set up',`Pickup is scheduled for ${fdw(addDays(b.event.date,b.event.days))} morning. Your ${inr(q.deposit)} deposit stays in escrow until then.`);break;
+   case 'returned':{
+     const fromDep=Math.min(b.shortage,q.deposit), extra=b.shortage-fromDep, bal=q.balance+extra;
+     act=b.disputed?acard('t-warn','scale','Under review by Tentwala support','Your money is frozen in escrow. Our team will compare both checklists and photos and call you within 2 hours.'):
+     acard('','pkg','Confirm the return count',b.shortage?`${inr(fromDep)} for missing items will be taken from your deposit${extra?` and ${inr(extra)} added to the balance`:''}.`:'All items were returned.',
+      `<div class="card" style="color:var(--ink);padding:12px 14px"><div class="list">${b.items.filter(i=>i.ret<i.qty).map(i=>`<div class="li"><img class="thumb" src="${im(P(i.pid).key)}" alt=""><div class="nm">${P(i.pid).name}<small>${i.qty-i.ret} missing</small></div><span class="v num" style="color:var(--bad)">${inr((i.qty-i.ret)*P(i.pid).replace)}</span></div>`).join('')||`<div class="li"><div class="nm">All items counted</div>${ic('checkc',18)}</div>`}
+       <div class="li"><div class="nm">Deposit refund to you</div><span class="v num">${inr(q.deposit-fromDep)}</span></div></div></div>
+       <button class="btn gold" data-a="cSettle|${id}|upi">Pay ${inr(bal)} by UPI</button>
+       <div class="btn-row"><button class="btn light sm" data-a="cSettle|${id}|cash">Paid in cash</button>${b.shortage&&!b.disputeDone?`<button class="btn light sm" data-a="cDispute|${id}">Count is wrong</button>`:''}</div>`,true);
+     break;}
+   case 'settled':act=acard('t-ok','checkc','All settled',`Balance ${inr(b.balPaid)} paid by ${b.payMode==='upi'?'UPI':'cash'}. Deposit refund of ${inr(b.refund)} sent to your UPI.`,
+     `<div style="text-align:center;border-top:1px solid var(--line);padding-top:12px"><b>${b.rating?'Thanks for your rating':'Rate '+v.name}</b><div class="stars">${[1,2,3,4,5].map(n=>`<button class="${(b.rating||0)>=n?'on':''}" data-a="cRate|${id}|${n}" aria-label="${n} stars">${star(26)}</button>`).join('')}</div></div>`);break;
+   case 'declined':act=acard('t-bad','x',`${v.name} couldn't take this`,`No money was charged. Try another verified tent house in ${b.event.city}.`,`<button class="btn sec sm" data-a="cTab|home">Browse tent houses</button>`);break;
+   case 'cancelled':act=acard('t-bad','x','Booking cancelled','Any refund reaches your UPI within 2 working days.');break;
+  }
+  return `<div class="subhdr"><button class="ib" data-a="back|c" aria-label="Back">${ic('left')}</button><div class="t"><b>${v.name}</b><span>${b.id}</span></div>${pill(b.status)}</div>
+  <div class="pad stack12">
+   ${progressHtml(b.status)?`<div class="card">${progressHtml(b.status)}</div>`:''}${act}
+   <div class="card"><div class="card-h"><b>${EV(b.event.type).n} · ${b.event.guests} guests</b></div><div class="stack8 small muted"><span class="row">${ic('cal',16)}${fdw(b.event.date)} · ${b.event.days} day${b.event.days>1?'s':''}</span><span class="row">${ic('pin',16)}${b.event.venue}</span></div>
+    <div class="btn-row" style="margin-top:12px"><button class="btn sec sm" data-a="noop">${ic('phone',16)}Call</button><button class="btn sec sm" data-a="noop">${ic('chat',16)}WhatsApp</button></div></div>
+   <div class="card"><div class="card-h"><b>Bill</b></div><div class="bill num">
+    <div class="r"><span>Rental and delivery</span><span>${inr(q.itemsTotal)}</span></div><div class="r"><span>Booking fee</span><span>${inr(q.fee)}</span></div>
+    <div class="r ${PAID.includes(b.status)?'g':''}"><span>${PAID.includes(b.status)?'Paid · ':''}Advance ${q.adv}%</span><span>${inr(q.advance)}</span></div>
+    <div class="r"><span>Refundable deposit</span><span>${inr(q.deposit)}</span></div><div class="r t"><span>Balance after return</span><span>${inr(q.balance)}</span></div></div></div>
+   <div class="card"><div class="card-h"><b>Items</b><span>${b.items.length}</span></div><div class="list">${b.items.map(i=>`<div class="li"><img class="thumb" src="${im(P(i.pid).key)}" alt=""><div class="nm">${P(i.pid).name}</div><span class="v num">× ${i.qty}</span></div>`).join('')}</div></div>
+   <div class="card"><div class="card-h"><b>Activity</b></div><div class="tl">${b.timeline.map(t=>`<div><span>${t.msg}<em>${t.t}</em></span></div>`).join('')}</div></div>
+  </div>`;
+}
+function cBookings(){
+  const mine=S.bookings.filter(b=>b.cust===S.cust.name);
+  return `<div class="subhdr" style="padding-top:12px;border:0;background:transparent"><div class="t"><b style="font-size:22px">My bookings</b><span class="hi">मेरी बुकिंग</span></div></div><div class="pad stack8" style="padding-top:0">
+   ${mine.length?mine.map(b=>{const v=Vd(b.vid);return `<div class="rowcard" data-a="cOpenB|${b.id}" role="button" tabindex="0"><img class="thumb" style="width:56px;height:56px" src="${im(v.img)}" alt=""><div style="flex:1;min-width:0"><div class="ttl">${v.name}</div><div class="sub num">${EV(b.event.type).n} · ${fd(b.event.date)} · ${inr(b.q.grand)}</div><div style="margin-top:6px">${pill(b.status)}</div></div>${ic('right',18)}</div>`}).join(''):
+   `<div class="empty"><div class="ei">${ic('list',26)}</div><b>No bookings yet</b>Pick your event and a tent house to get started.</div>`}</div>`;
+}
+function cHelp(){
+  return `<div class="subhdr" style="padding-top:12px;border:0;background:transparent"><div class="t"><b style="font-size:22px">Help and policies</b><span class="hi">सहायता</span></div></div><div class="pad stack8" style="padding-top:0">
+   ${[['shield','Escrow advance','Your advance reaches the vendor only when you share the OTP at delivery.'],['pkg','Item counting','The vendor submits a return checklist. Missing items are charged at a fixed replacement price from your refundable deposit.'],
+     ['ret','Cancellation','Cancel 7 or more days before: full refund, fee kept. Under 7 days: the vendor keeps 50% of the advance.'],['scale','Disputes','Tap "Count is wrong". Money is frozen and our team decides within 48 hours.'],['phone','Call us','1800-XXX-TENT · 7 am to 11 pm · Hindi and Marwari']]
+    .map(([i,t,d])=>`<div class="card row" style="align-items:flex-start;gap:12px"><span class="aic" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--brand-50);color:var(--brand);flex:none">${ic(i)}</span><div><b style="font-size:15px">${t}</b><div class="small muted" style="line-height:1.5;margin-top:2px">${d}</div></div></div>`).join('')}</div>`;
+}
+function paySheet(){
+  const pay=S.ui.c.pay, b=B(pay.id), q=b.q;
+  return `<div class="sheet" role="dialog" aria-label="Pay advance"><div class="in"><div class="grab"></div>${pay.proc?`<div style="text-align:center;padding-bottom:12px"><div class="spin"></div><b>Paying via ${pay.proc}</b><div class="small muted" style="margin-top:4px">Please don't close the app</div></div>`:
+  `<div class="row sbw"><b style="font-size:19px">Pay <span class="num">${inr(q.payNow)}</span></b><button class="ib" data-a="cPayClose" aria-label="Close">${ic('x',18)}</button></div>
+   <div class="bill small num" style="margin-top:12px"><div class="r"><span>Advance ${q.adv}%</span><span>${inr(q.advance)}</span></div><div class="r"><span>Refundable deposit</span><span>${inr(q.deposit)}</span></div><div class="r"><span>Booking fee</span><span>${inr(q.fee)}</span></div></div>
+   <div class="upis">${[['PhonePe','Pe'],['Google Pay','G'],['Paytm','P'],['BHIM UPI','₹']].map(([n,l])=>`<button class="upi" data-a="cPayGo|${n}"><i>${l}</i>${n}</button>`).join('')}</div>
+   <div class="trust">${ic('lock',18)}<div>Held in a <b>Tentwala escrow account</b> until your items are delivered.</div></div>`}</div></div>`;
+}
+
+/* ============ VENDOR APP ============ */
+function rv(){
+  const ui=S.ui.v, top=ui.stack.at(-1); let body='',bar='',sb=sbar(true,'var(--teal-900)');
+  const live=!!ui.vid&&Vd(ui.vid)?.status==='live';
+  const nav=live&&['home','orders','stock','earn'].includes(top.s);
+  if(!ui.vid) body=vOnboard();
+  else if(!live) body=vPending();
+  else if(top.s==='home') body=vHome();
+  else if(top.s==='orders') body=vOrders();
+  else if(top.s==='order'){const r=vOrder(top.id);body=r[0];bar=r[1];sb=sbar()}
+  else if(top.s==='return'){const r=vReturn(top.id);body=r[0];bar=r[1];sb=sbar()}
+  else if(top.s==='stock') body=vStockScr();
+  else if(top.s==='earn') body=vEarn();
+  const nNew=ui.vid?S.bookings.filter(b=>b.vid===ui.vid&&b.status==='requested').length:0;
+  const navH=nav?`<nav class="tabbar">${[['home','home','Home'],['orders','list','Orders'],['stock','stock','Stock'],['earn','wallet','Earnings']].map(([k,i,l])=>`<button class="${ui.tab===k?'on':''}" data-a="vTab|${k}">${ic(i,22)}${l}${k==='orders'&&nNew?`<span class="bdg">${nNew}</span>`:''}</button>`).join('')}</nav>`:'';
+  return {html:sb+`<div class="scroll">${body}</div>`+bar+navH+toastHtml('v'),key:(ui.vid||'')+top.s+(top.id||'')};
+}
+const vtop=(title,sub)=>`<div class="v-top"><h1 style="margin-top:8px">${title}</h1><p>${sub}</p></div>`;
+function vOnboard(){
+  const ui=S.ui.v, f=ui.form, kyc=ui.kyc;
+  const K=[['aadhaar','Aadhaar'],['pan','PAN card'],['shop','Shop photo'],['godown','Godown video'],['bank','Bank account']];
+  return `<div class="ob-top"><div class="mk">${ic('store',24)}</div><h1>Grow your tent house with Tentwala</h1><p class="hi">टेंटवाला पार्टनर बनें · free to join</p>
+    <div class="perks"><div>${ic('lock',16)}Guaranteed advance</div><div>${ic('pkg',16)}No counting disputes</div><div>${ic('trend',16)}More season bookings</div><div>${ic('bank',16)}Next-morning payouts</div></div></div>
+  <div class="pad stack12">
+   <div class="card"><div class="step-h"><span class="n">1</span><b>Shop details</b><span>दुकान की जानकारी</span></div>
+    <div class="vfield"><label for="f1">Shop name</label><input id="f1" data-in="f_name" value="${f.name}"></div>
+    <div class="vfield"><label for="f2">Owner</label><input id="f2" data-in="f_owner" value="${f.owner}"></div>
+    <div class="fgrid"><div class="vfield"><label for="f3">Mobile</label><input id="f3" type="tel" data-in="f_phone" value="${f.phone}"></div><div class="vfield"><label for="f4">Years in business</label><input id="f4" data-in="f_years" value="${f.years}"></div></div>
+    <div class="fgrid"><div class="vfield"><label for="f5">City</label><select id="f5" data-ch="f_city">${CITIES.map(c=>`<option ${c===f.city?'selected':''}>${c}</option>`).join('')}</select></div><div class="vfield"><label for="f6">Area</label><input id="f6" data-in="f_area" value="${f.area}"></div></div></div>
+   <div class="card"><div class="step-h"><span class="n">2</span><b>Documents</b><span>दस्तावेज़</span></div>
+    <div class="docs-g">${K.map(([k,l])=>`<button class="doc ${kyc[k]?'ok':''}" data-a="vKyc|${k}">${ic(kyc[k]?'checkc':'upload',18)}${l}</button>`).join('')}</div>
+    <p class="small muted" style="margin-top:10px">Tap to upload a photo. Documents you skip can be collected on the field visit.</p></div>
+   <div class="card"><div class="step-h"><span class="n">3</span><b>What do you rent out?</b></div>
+    <div class="chk">${TPL.map(t=>`<button class="${ui.pick.includes(t[0])?'on':''}" data-a="vPick|${t[0]}" aria-pressed="${ui.pick.includes(t[0])}"><img src="${im(t[0])}" alt="">${t[2].split(',')[0].replace(/ \d.*$/,'')}</button>`).join('')}</div>
+    <p class="small muted" style="margin-top:10px">Our team photographs and catalogues your stock on the field visit.</p></div>
+   <button class="btn" data-a="vSubmit">Submit for verification</button>
+   <p class="small muted" style="text-align:center">Already a partner? <button data-a="vLogin" style="color:var(--teal);font-weight:700;text-decoration:underline">Log in as Rajputana Shamiyana</button></p>
+  </div>`;
+}
+function vPending(){
+  const v=Vd(S.ui.v.vid);
+  const steps=[[1,'Mobile number verified'],[1,'Documents uploaded'],[1,vendorProducts(v.id).length+' items catalogued'],[0,'Field visit and godown check'],[0,'Bank account verification']];
+  return `<div class="v-top"><h1 style="margin-top:8px">Ram Ram sa, ${v.owner.split(' ')[0]} ji</h1><p>${v.name}</p></div>
+  <div class="pad stack12"><div class="card" style="text-align:center;padding:24px 16px"><div class="empty" style="padding:0"><div class="ei" style="background:var(--teal-50);color:var(--teal)">${ic('search',26)}</div><b>Verification in progress</b>Usually done within 24 hours.</div></div>
+   <div class="card"><div class="list">${steps.map(([d,t])=>`<div class="li"><span style="color:${d?'var(--ok)':'var(--faint)'}">${ic(d?'checkc':'clock')}</span><div class="nm">${t}</div><span class="small ${d?'':'muted'}" style="${d?'color:var(--ok);font-weight:700':''}">${d?'Done':'Pending'}</span></div>`).join('')}</div></div>
+   <div class="trust" style="background:var(--teal-50);color:var(--teal-700)">${ic('phone',18)}<div>Our Jodhpur field officer <b>Deepak</b> will call before the visit.</div></div></div>`;
+}
+function vHome(){
+  const v=Vd(S.ui.v.vid), bs=S.bookings.filter(b=>b.vid===v.id);
+  const reqs=bs.filter(b=>b.status==='requested'), up=bs.filter(b=>HOLD.includes(b.status)).sort((a,b)=>a.event.date.localeCompare(b.event.date));
+  const monthEarn=bs.filter(b=>PAID.includes(b.status)&&b.event.date.slice(0,7)==='2026-11').reduce((s,b)=>s+b.q.itemsTotal-b.q.commission,0);
+  const days=Array.from({length:14},(_,i)=>addDays(clockDate(),i+1));
+  const PEAK=['2026-11-20','2026-11-22','2026-11-25','2026-11-28','2026-11-29','2026-12-04','2026-12-05'];
+  return `<div class="v-top">
+   <div class="row sbw"><select data-ch="vSwitch" aria-label="Switch shop">${S.vendors.filter(x=>x.status==='live').map(x=>`<option value="${x.id}" ${x.id===v.id?'selected':''}>${x.name}</option>`).join('')}</select><span class="online">Online</span></div>
+   <h1>Ram Ram sa, ${v.owner.split(' ')[0]} ji</h1><p class="hi">${v.hi}</p>
+   <div class="vstats num"><div class="vstat"><span>${ic('bell',14)}New requests</span><b>${reqs.length}</b></div><div class="vstat"><span>${ic('trend',14)}November business</span><b>${inr(monthEarn)}</b></div>
+   <div class="vstat"><span>${ic('wallet',14)}Wallet</span><b>${inr(v.wallet.avail)}</b></div><div class="vstat"><span>${star(14)}Rating</span><b>${v.reviews?v.rating.toFixed(1):'New'}</b></div></div></div>
+  <div class="pad">
+   ${reqs.length?`<div class="sec-h" style="margin-top:4px"><h2>New requests</h2><span>Reply fast to rank higher</span></div><div class="stack12">`+reqs.map(b=>`<div class="req"><div class="hd"><span class="av">${initials(b.cust)}</span><div class="nm"><b>${b.cust}</b><span>${EV(b.event.type).n} · ${fdw(b.event.date)} · ${b.event.days} day${b.event.days>1?'s':''} · ${b.event.guests} guests</span></div><span class="amt num">${inr(b.q.itemsTotal)}</span></div>
+     <div class="ln">${b.items.slice(0,4).map(i=>`<span class="tag">${P(i.pid).name.split(',')[0].replace(/ \d.*$/,'')} × ${i.qty}</span>`).join('')}${b.items.length>4?`<span class="tag">+${b.items.length-4} more</span>`:''}</div>
+     <div class="btn-row"><button class="btn danger sm" data-a="vDecline|${b.id}">Decline</button><button class="btn sec sm" data-a="vOpenB|${b.id}">Details</button><button class="btn sm" data-a="vAccept|${b.id}">${ic('check',16)}Accept</button></div></div>`).join('')+'</div>':''}
+   <div class="sec-h"><h2>Next 14 days</h2><span class="hi">कैलेंडर</span></div>
+   <div class="days">${days.map(d=>{const bk=up.some(b=>d>=b.event.date&&d<=addDays(b.event.date,b.event.days-1));return `<div class="day ${bk?'bk':PEAK.includes(d)?'pk':''}">${new Date(d+'T00:00:00Z').toLocaleDateString('en-IN',{weekday:'short',timeZone:'UTC'})}<b>${+d.slice(8)}</b></div>`}).join('')}</div>
+   <div class="legend"><span><i style="--c:var(--teal)"></i>Booked</span><span><i style="--c:var(--gold-50);--b:#E9C98F"></i>Muhurat date</span></div>
+   <div class="sec-h"><h2>Upcoming jobs</h2><span>${up.length}</span></div>
+   <div class="stack8">${up.length?up.map(b=>`<div class="rowcard" data-a="vOpenB|${b.id}" role="button" tabindex="0"><span class="av">${initials(b.cust)}</span><div style="flex:1;min-width:0"><div class="ttl">${b.cust}</div><div class="sub num">${b.id} · ${fdw(b.event.date)} · ${inr(b.q.itemsTotal)}</div></div>${vpill(b.status)}</div>`).join(''):'<div class="card small muted">No upcoming jobs yet.</div>'}</div>
+  </div>`;
+}
+function vOrders(){
+  const bs=S.bookings.filter(b=>b.vid===S.ui.v.vid);
+  return vtop('Orders',`${bs.length} bookings`)+`<div class="pad stack8">
+   ${bs.map(b=>`<div class="rowcard" data-a="vOpenB|${b.id}" role="button" tabindex="0"><span class="av">${initials(b.cust)}</span><div style="flex:1;min-width:0"><div class="ttl">${b.cust}</div><div class="sub num">${EV(b.event.type).n} · ${fdw(b.event.date)} · ${inr(b.q.itemsTotal)}</div></div>${vpill(b.status)}</div>`).join('')||`<div class="empty"><div class="ei">${ic('list',26)}</div><b>No orders yet</b></div>`}</div>`;
+}
+function vOrder(id){
+  const b=B(id), q=b.q; let act='',bar='';
+  const earn=q.itemsTotal-q.commission, rel=q.advance-q.commission;
+  switch(b.status){
+   case 'requested':bar=`<div class="ctabar"><button class="btn danger" style="flex:1" data-a="vDecline|${id}">Decline</button><button class="btn" style="flex:2" data-a="vAccept|${id}">${ic('check',18)}Accept booking</button></div>`;break;
+   case 'accepted':act=acard('t-warn','clock','Waiting for customer payment','Your stock is blocked for 2 hours while the customer pays the advance.');break;
+   case 'confirmed':act=acard('t-teal','lock',`Advance of ${inr(q.advance)} in escrow`,`You receive ${inr(rel)} when the customer shares the OTP at the venue.`,`<div class="vfield" style="margin:0"><label for="veh">Vehicle</label><select id="veh" data-ch="vehicle">${['RJ19 GB 4471 · Tata 407','RJ19 GA 1180 · Bolero Pickup','RJ19 GC 9022 · Eicher 14 ft'].map(x=>`<option ${x===S.ui.v.vehicle?'selected':''}>${x}</option>`).join('')}</select></div>`);
+     bar=`<div class="ctabar"><button class="btn" data-a="vDispatch|${id}">${ic('truck',18)}Dispatch</button></div>`;break;
+   case 'dispatched':act=acard('t-teal','lock','Collect the delivery OTP',`Count the items with the customer, then enter their 4-digit OTP to receive ${inr(rel)}.`,`<div class="otpin"><input maxlength="4" inputmode="numeric" placeholder="····" aria-label="Delivery OTP" data-in="otp" value="${S.ui.v.otp||''}" id="otpbox"></div>`);
+     bar=`<div class="ctabar"><button class="btn" data-a="vOtp|${id}">${ic('check',18)}Verify and mark delivered</button></div>`;break;
+   case 'delivered':act=acard('t-ok','checkc',`Delivered · ${inr(rel)} in your wallet`,'After the function, pick up the items and record the return count.');
+     bar=`<div class="ctabar"><button class="btn" data-a="vRetOpen|${id}">${ic('ret',18)}Start pickup and count</button></div>`;break;
+   case 'returned':act=acard('t-warn',b.disputed?'scale':'clock',b.disputed?'Dispute under review':'Waiting for customer to confirm',`Shortage claimed ${inr(b.shortage)} · balance due ${inr(q.balance)}`);break;
+   case 'settled':act=acard('t-ok','checkc','Settled',`Balance ${inr(b.balPaid)} ${b.payMode==='upi'?'added to wallet':'received in cash'}${b.fromDep?', plus '+inr(b.fromDep)+' for missing items':''}.${b.rating?` Rated ${b.rating} stars.`:''}`);break;
+   default:act=acard('t-bad','x',STV[b.status],'');
+  }
+  const body=`<div class="subhdr"><button class="ib" data-a="back|v" aria-label="Back">${ic('left')}</button><div class="t"><b>${b.cust}</b><span>${b.id} · ${b.phone}</span></div>${vpill(b.status)}</div>
+  <div class="pad stack12">${act}
+   <div class="card"><div class="card-h"><b>${EV(b.event.type).n} · ${b.event.guests} guests</b><span class="hi">${EV(b.event.type).hi}</span></div><div class="stack8 small muted"><span class="row">${ic('cal',16)}${fdw(b.event.date)} · ${b.event.days} day${b.event.days>1?'s':''}</span><span class="row">${ic('pin',16)}${b.event.venue}</span></div></div>
+   <div class="card"><div class="card-h"><b>Items</b><span class="hi">माल की सूची</span></div><div class="list">${b.items.map(i=>{const p=P(i.pid),a=avail(p,b.event.date,b.event.days,b.id);return `<div class="li"><img class="thumb" src="${im(p.key)}" alt=""><div class="nm">${p.name}<small class="hi">${p.hi}${b.status==='requested'?` · ${a} free`:''}</small></div><span class="v num" style="${b.status==='requested'&&a<i.qty?'color:var(--bad)':''}">× ${i.qty}</span></div>`}).join('')}</div></div>
+   <div class="card"><div class="card-h"><b>Your earning</b><span class="hi">आपकी कमाई</span></div><div class="bill num">
+    <div class="r"><span>Rental</span><span>${inr(q.subtotal)}</span></div><div class="r"><span>Delivery and setup</span><span>${inr(q.delivery)}</span></div>
+    <div class="r"><span>Tentwala commission ${q.comm}%</span><span style="color:var(--bad)">− ${inr(q.commission)}</span></div>
+    <div class="r t"><span>You receive</span><span style="color:var(--teal)">${inr(earn)}</span></div>
+    <div class="r sub"><span>${inr(rel)} at delivery, ${inr(q.balance)} after return</span><span></span></div></div></div>
+  </div>`;
+  return [body,bar];
+}
+function vReturn(id){
+  const b=B(id), r=S.ui.v.ret; let sh=0; b.items.forEach(i=>sh+=(i.qty-r[i.pid])*P(i.pid).replace);
+  const body=`<div class="subhdr"><button class="ib" data-a="back|v" aria-label="Back">${ic('left')}</button><div class="t"><b>Return count</b><span>${b.id} · ${b.cust}</span></div></div>
+  <div class="pad stack12"><p class="small muted">Count what came back. Missing items are charged at the replacement price.</p>
+   <div class="card"><div class="list">${b.items.map(i=>{const p=P(i.pid),m=i.qty-r[i.pid];return `<div class="li"><img class="thumb" src="${im(p.key)}" alt=""><div class="nm">${p.name}<small>Sent ${i.qty} · ${m?`<b style="color:var(--bad)">${m} missing × ${inr(p.replace)}</b>`:'all back'}</small></div>
+     <div class="qty"><button data-a="vRet|${i.pid}|-1" aria-label="Decrease">${ic('minus',14)}</button><span class="num">${r[i.pid]}</span><button data-a="vRet|${i.pid}|1" aria-label="Increase">${ic('plus',14)}</button></div></div>`}).join('')}</div></div>
+   <div class="card bill num"><div class="r"><span>Missing or damaged</span><b style="color:${sh?'var(--bad)':'var(--ok)'}">${inr(sh)}</b></div><div class="r sub"><span>Customer deposit held</span><span>${inr(b.q.deposit)}</span></div></div>
+   <div class="trust" style="background:var(--teal-50);color:var(--teal-700)">${ic('camera',18)}<div>Photos of damaged items are attached automatically. The customer confirms, or Tentwala support decides.</div></div></div>`;
+  return [body,`<div class="ctabar"><button class="btn" data-a="vRetSubmit|${id}">Submit count${sh?` · claim ${inr(sh)}`:' · all returned'}</button></div>`];
+}
+function vStockScr(){
+  const v=Vd(S.ui.v.vid), cat=S.ui.v.cat, ps=vendorProducts(v.id).filter(p=>cat==='all'||p.cat===cat);
+  return vtop('My stock',`${vendorProducts(v.id).length} items · prices per day`)+`<div class="pad" style="padding-top:0">
+   <div class="tabs" style="margin-bottom:4px">${CATS.map(c=>`<button class="${cat===c.id?'on':''}" data-a="vCat|${c.id}">${c.n}</button>`).join('')}</div>
+   ${ps.map(p=>`<div class="prow" style="${p.active?'':'opacity:.5'}"><img class="pimg" style="width:64px;height:64px" src="${im(p.key)}" alt=""><div class="pinfo"><b>${p.name}</b><span class="hn">${p.hi}</span>
+     <div class="row" style="margin-top:6px;gap:6px"><span class="small muted">₹</span><input class="pinput num" data-ch="price" data-pid="${p.id}" value="${p.price}" aria-label="Price per day"><span class="small muted">/ ${p.unit}</span></div></div>
+     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px"><button class="tgl ${p.active?'on':''}" data-a="vToggle|${p.id}" aria-label="Listed" aria-pressed="${p.active}"></button><div class="qty"><button data-a="vStock|${p.id}|-1" aria-label="Less stock">${ic('minus',14)}</button><span class="num">${p.stock}</span><button data-a="vStock|${p.id}|1" aria-label="More stock">${ic('plus',14)}</button></div></div></div>`).join('')}</div>`;
+}
+function vEarn(){
+  const v=Vd(S.ui.v.vid), bs=S.bookings.filter(b=>b.vid===v.id);
+  const escrow=bs.filter(b=>['confirmed','dispatched'].includes(b.status)).reduce((s,b)=>s+b.q.advance-b.q.commission,0);
+  return vtop('Earnings','Payouts every morning to bank ••4521')+`<div class="pad stack12">
+   <div class="wallet num"><div class="k">Wallet · paid out tomorrow morning</div><div class="big">${inr(v.wallet.avail)}</div>
+    <div class="w3"><div>In escrow<b>${inr(escrow)}</b></div><div>Paid to bank<b>${inr(v.wallet.paid)}</b></div><div>Cash collected<b>${inr(v.wallet.cash)}</b></div></div>
+    <button class="btn gold sm" data-a="vInstant" ${v.wallet.avail?'':'disabled'}>${ic('zap',16)}Instant payout · ${S.settings.instant}% fee</button></div>
+   <div class="sec-h" style="margin:8px 0 0"><h2>Payouts</h2></div>
+   ${v.payouts.length?v.payouts.map(p=>`<div class="rowcard"><span class="av" style="background:var(--ok-50);color:var(--ok)">${ic('bank',18)}</span><div style="flex:1;min-width:0"><div class="ttl num">${inr(p.amt)}</div><div class="sub">${p.t} · ${p.how} · ${p.utr}</div></div><span class="pill s-conf">Paid</span></div>`).join(''):'<div class="card small muted">Your first payout arrives the morning after your first delivery.</div>'}
+   <div class="card"><b>Tentwala Pro · ₹999 a month</b><p class="small muted" style="margin:4px 0 12px;line-height:1.5">Featured at the top in ${v.city}, GST invoices, staff logins and season demand alerts.</p><button class="btn sec sm" data-a="noop">See Pro plan</button></div></div>`;
+}
+
+/* ============ ADMIN ============ */
+function ra(){
+  const a=S.ui.a; const pend=S.vendors.filter(v=>v.status==='pending').length, disp=S.disputes.filter(d=>d.status==='open').length, pay=S.vendors.filter(v=>v.wallet.avail>0).length;
+  const nav=[['overview','dash','Overview'],['bookings','list','Bookings'],['vendors','store','Vendors',pend],['money','wallet','Escrow & payouts',pay],['disputes','scale','Disputes',disp],['settings','sliders','Settings']];
+  let main='';
+  if(a.view==='overview')main=aOverview();else if(a.view==='bookings')main=aBookings();else if(a.view==='vendors')main=aVendors();
+  else if(a.view==='money')main=aMoney();else if(a.view==='disputes')main=aDisputes();else main=aSettings();
+  return {html:`<aside class="side"><div class="brand"><span class="mk">${ic('tent',18)}</span><div><b>Tentwala</b><span>Admin · Rajasthan</span></div></div>
+    <div class="grp">Operations</div>${nav.map(([k,i,l,n])=>`<button class="${a.view===k?'on':''}" data-a="aView|${k}">${ic(i,18)}${l}${n?`<em>${n}</em>`:''}</button>`).join('')}
+    <div class="me"><span class="av">AN</span><div><b>Ananya</b><span>${clockStr()}</span></div></div></aside><main class="amain">${main}</main>${a.sel?aDrawer(a.sel):''}${a.toast?`<div class="atoast" role="status">${ic('checkc',18)}${a.toast.msg}</div>`:''}`,key:a.view};
+}
+function stats(){
+  const paid=S.bookings.filter(b=>PAID.includes(b.status));
+  const gmvLive=paid.filter(b=>!b.seed).reduce((s,b)=>s+b.q.itemsTotal,0);
+  return {gmvLive,gmv:MONTHS.slice(0,8).reduce((s,m)=>s+m[1],0)*1e5+gmvLive,rev:S.base.rev+S.rev,escrow:escrowBal(),
+    bookings:S.base.bookings+S.bookings.filter(b=>!b.seed&&PAID.includes(b.status)).length,live:S.vendors.filter(v=>v.status==='live').length,
+    active:S.bookings.filter(b=>HOLD.includes(b.status)||b.status==='requested').length};
+}
+const kpi=(label,val,delta,icon,tone,neutral,fl)=>`<div class="kpi ${fl?'flash':''} ${tone}"><div class="kh">${label}<span class="ki">${ic(icon,16)}</span></div><div class="v">${val}</div><div class="d ${neutral?'n':''}">${neutral?'':ic('trend',14)}${delta}</div></div>`;
+function aOverview(){
+  const s=stats(), f=S.ui.a.flash;
+  const max=80;
+  const att=[];
+  S.vendors.filter(v=>v.status==='pending').forEach(v=>att.push(['t-info','store',`KYC review: <b>${v.name}</b>, ${v.city}`,`<button class="ab" data-a="aView|vendors">Review</button>`]));
+  S.disputes.filter(d=>d.status==='open').forEach(d=>att.push(['t-bad','scale',`Dispute on <b>${d.bid}</b>`,`<button class="ab" data-a="aView|disputes">Resolve</button>`]));
+  S.vendors.filter(v=>v.wallet.avail>0).forEach(v=>att.push(['t-ok','bank',`Payout due: <b>${v.name}</b> ${inr(v.wallet.avail)}`,`<button class="ab g" data-a="aPayout|${v.id}">Pay</button>`]));
+  S.bookings.filter(b=>b.status==='requested').forEach(b=>att.push(['t-warn','clock',`<b>${b.id}</b> awaiting vendor reply`,'<span class="small muted">SLA 30 min</span>']));
+  return `<div class="ahead"><div><h1>Good morning, Ananya</h1><p>Rajasthan · season FY 2026–27 · live</p></div><span class="pill s-live">${s.active} active bookings</span></div>
+  <div class="kpis">
+   ${kpi('GMV this season',lakh(s.gmv),s.gmvLive?'+'+inr(s.gmvLive)+' in this demo':'22% vs last season','trend','t-ok',false,f)}
+   ${kpi('Platform revenue',lakh(s.rev),S.rev?'+'+inr(S.rev)+' in this demo':'Commission and fees','rupee','t-v',false,f)}
+   ${kpi('Held in escrow',inr(s.escrow),'Customer money, not revenue','lock','t-teal',true,f)}
+   ${kpi('Bookings this season',s.bookings.toLocaleString('en-IN'),'Average order ₹58k','list','t-info',true)}
+   ${kpi('Vendors live',s.live+' <span class="small muted" style="font-weight:600">in 3 cities</span>',S.vendors.filter(v=>v.status==='pending').length+' awaiting KYC','store','t-warn',true)}
+   ${kpi('Take rate',S.settings.comm+'% + ₹'+S.settings.fee,'Editable in Settings','sliders','t-bad',true)}</div>
+  <div class="two"><div class="panel"><h2>Season demand <small>GMV, ₹ lakh · illustrative</small></h2>
+    <div class="chart" role="img" aria-label="Monthly GMV in lakh rupees, peaking in December and February"><div class="grid">${[80,60,40,20,0].map(v=>`<div><span>${v}</span></div>`).join('')}</div>
+    <div class="bars">${MONTHS.map(([m,v],i)=>{const val=i===7?v+s.gmvLive/1e5:v;return `<div class="cb ${i===7?'cur':v>=45?'pk':''}"><div style="height:${Math.min(100,val/max*100)}%">${i===7?`<span class="val" style="left:50%;transform:translateX(-50%)">${val.toFixed(0)}</span>`:''}</div><span class="m">${m}</span></div>`}).join('')}</div></div>
+    <div class="legend2"><span><i style="--c:var(--brand)"></i>This month</span><span><i style="--c:#C9A487"></i>Peak (muhurat)</span><span><i style="--c:#E6D6C7"></i>Regular</span></div></div>
+   <div class="panel"><h2>Needs attention <small>${att.length}</small></h2>${att.length?att.slice(0,6).map(([t,i,txt,b])=>`<div class="att ${t}"><span class="ic">${ic(i,16)}</span><div>${txt}</div>${b}</div>`).join(''):`<div class="small muted">Nothing needs attention.</div>`}</div></div>
+  <div class="panel"><h2>Live activity <small>Messages the platform sent</small></h2>${S.feed.slice(0,6).map(x=>`<div class="act"><em>${x.t}</em><span><b>${{c:'Customer',v:'Vendor',a:'Admin'}[x.to]}</b> · ${x.ch}: ${x.msg}</span></div>`).join('')||'<div class="small muted">Start the demo to see activity.</div>'}</div>`;
+}
+function aBookings(){
+  return `<div class="ahead"><div><h1>Bookings</h1><p>All cities · select a row to see the money split</p></div></div>
+  <div class="panel tw" style="padding:12px 8px"><table class="tbl"><thead><tr><th>Booking</th><th>Customer</th><th>Vendor</th><th class="r">Value</th><th class="r">In escrow</th><th>Status</th></tr></thead><tbody>
+  ${S.bookings.map(b=>{const held=S.ledger.filter(l=>l.bid===b.id).reduce((s,l)=>s+l.esc,0);return `<tr class="clk" data-a="aSel|${b.id}"><td><b>${b.id}</b><span class="s">${EV(b.event.type).n} · ${fd(b.event.date)} · ${b.event.city}</span></td><td>${b.cust}<span class="s">${b.event.guests} guests</span></td><td>${Vd(b.vid).name}</td><td class="r">${inr(b.q.itemsTotal)}</td><td class="r">${held?inr(held):'—'}</td><td>${pill(b.status)}</td></tr>`}).join('')}</tbody></table></div>`;
+}
+function aDrawer(id){
+  const b=B(id), q=b.q, v=Vd(b.vid), tot=q.itemsTotal+q.fee;
+  const parts=[['Vendor earning',q.itemsTotal-q.commission,'var(--teal)'],['Commission',q.commission,'var(--brand)'],['Booking fee',q.fee,'#D99A12']];
+  return `<div class="drawer" role="dialog" aria-label="Booking ${b.id}"><div class="row sbw"><div><h2 style="font-size:19px;font-weight:800">${b.id}</h2><p class="small muted">${b.cust} → ${v.name}</p></div><button class="ib" data-a="aClose" aria-label="Close">${ic('x',18)}</button></div>
+   <div style="margin:12px 0">${pill(b.status)}</div><p class="small muted" style="margin-bottom:16px">${EV(b.event.type).n} · ${fdw(b.event.date)} · ${b.event.guests} guests · ${b.event.city}</p>
+   <div class="panel"><h2>Money split <small class="num">${inr(tot)}</small></h2><div class="split">${parts.map(p=>`<div style="width:${p[1]/tot*100}%;background:${p[2]}"></div>`).join('')}</div>
+    <div class="leg num">${parts.map(p=>`<div><span style="--c:${p[2]}">${p[0]}</span><b>${inr(p[1])}</b></div>`).join('')}</div>
+    <div class="bill num" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><div class="r"><span>Advance ${q.adv}%</span><span>${inr(q.advance)}</span></div><div class="r"><span>Deposit ${q.dep}%</span><span>${inr(q.deposit)}</span></div><div class="r"><span>Balance at return</span><span>${inr(q.balance)}</span></div>${b.shortage?`<div class="r"><span>Shortage claim</span><span style="color:var(--bad)">${inr(b.shortage)}</span></div>`:''}</div></div>
+   <div class="panel"><h2>Ledger</h2>${S.ledger.filter(l=>l.bid===id).reverse().map(l=>`<div class="act" style="grid-template-columns:1fr auto"><span>${l.type}</span><b class="num">${inr(l.amt)}</b></div>`).join('')||'<div class="small muted">No money has moved yet.</div>'}</div>
+   <div class="panel"><h2>Timeline</h2><div class="tl">${b.timeline.map(t=>`<div><span>${t.msg}<em>${t.t}</em></span></div>`).join('')||'<span class="small muted">Imported booking</span>'}</div></div></div>`;
+}
+function aVendors(){
+  const D=[['aadhaar','Aadhaar'],['pan','PAN'],['shop','Shop'],['godown','Godown'],['bank','Bank']];
+  return `<div class="ahead"><div><h1>Vendors</h1><p>KYC, quality and listings</p></div></div>
+  <div class="panel tw" style="padding:12px 8px"><table class="tbl"><thead><tr><th>Tent house</th><th>Documents</th><th>Status</th><th></th></tr></thead><tbody>
+  ${S.vendors.map(v=>`<tr><td class="vn"><div class="row" style="gap:10px"><img class="vthumb" src="${im(v.img)}" alt=""><div><b>${v.name}</b><span class="s">${v.owner} · ${v.city}</span><span class="s">${vendorProducts(v.id).length} items${v.reviews?` · <span class="rate" style="font-size:12px">${star(11)}${v.rating.toFixed(1)}</span>`:''}</span></div></div></td>
+   <td><div class="docs">${D.map(([k,l])=>`<span class="${v.kyc[k]?'':'no'}">${ic(v.kyc[k]?'check':'x',11)}${l}</span>`).join('')}</div></td>
+   <td><span class="pill ${v.status==='live'?'s-live':v.status==='pending'?'s-pend':'s-x'}">${v.status[0].toUpperCase()+v.status.slice(1)}</span></td>
+   <td>${v.status==='pending'?`<div style="display:flex;flex-direction:column;gap:6px"><button class="ab g" data-a="aApprove|${v.id}">Approve</button><button class="ab r" data-a="aReject|${v.id}">Send back</button></div>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="panel small muted" style="line-height:1.6">Verification covers documents, a field visit (godown, stock count, photos) and a bank penny-drop. Vendors who cancel on muhurat dates drop in ranking automatically.</div>`;
+}
+function aMoney(){
+  const s=stats();
+  return `<div class="ahead"><div><h1>Escrow and payouts</h1><p>Split-payment escrow account · simulated</p></div><button class="ab g" data-a="aPayAll">${ic('bank',14)}Run T+1 payouts</button></div>
+  <div class="kpis">${kpi('Escrow balance',inr(s.escrow),'Advances and deposits held','lock','t-teal',true)}${kpi('Revenue in this demo',inr(S.rev),'Commission and fees','rupee','t-v',true)}${kpi('Due to vendors',inr(S.vendors.reduce((a,v)=>a+v.wallet.avail,0)),'Wallet balances','wallet','t-ok',true)}</div>
+  <div class="panel tw" style="padding:16px 8px 8px"><h2 style="padding:0 8px">Vendor wallets</h2><table class="tbl"><thead><tr><th>Vendor</th><th class="r">Wallet</th><th class="r">Paid out</th><th class="r">Cash collected</th><th></th></tr></thead><tbody>
+   ${S.vendors.filter(v=>v.status==='live').map(v=>`<tr><td><b>${v.name}</b></td><td class="r"><b>${inr(v.wallet.avail)}</b></td><td class="r">${inr(v.wallet.paid)}</td><td class="r">${inr(v.wallet.cash)}</td><td class="r">${v.wallet.avail?`<button class="ab g" data-a="aPayout|${v.id}">Pay out</button>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="panel tw" style="padding:16px 8px 8px"><h2 style="padding:0 8px">Ledger <small>${S.ledger.length} entries</small></h2><table class="tbl"><thead><tr><th>Booking</th><th>Entry</th><th class="r">Amount</th><th class="r">Escrow change</th></tr></thead><tbody>
+   ${S.ledger.map(l=>`<tr><td><b>${l.bid}</b><span class="s">${l.t}</span></td><td>${l.type}</td><td class="r"><b>${inr(l.amt)}</b></td><td class="r" style="color:${l.esc>0?'var(--ok)':l.esc<0?'var(--bad)':'var(--muted)'}">${l.esc?(l.esc>0?'+':'−')+inr(Math.abs(l.esc)):'—'}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">No money has moved yet. Run the demo.</td></tr>'}</tbody></table></div>`;
+}
+function aDisputes(){
+  return `<div class="ahead"><div><h1>Disputes</h1><p>Target: resolve within 48 hours. Money stays frozen meanwhile.</p></div></div>
+  ${S.disputes.length?S.disputes.map(d=>{const b=B(d.bid);return `<div class="panel"><h2>${d.bid} · ${b.cust} vs ${Vd(d.vid).name} <small>${d.t}</small></h2>
+    <p style="font-size:13.5px;line-height:1.5">${d.text}</p><div class="chips2" style="margin:10px 0 14px"><span class="on">${ic('check',12)}Return checklist</span><span class="on">${ic('check',12)}3 photos</span><span class="on">${ic('check',12)}Delivery OTP log</span><span class="on">${ic('check',12)}Call recording</span></div>
+    ${d.status==='open'?`<div class="row"><button class="ab" data-a="aResolve|${d.bid}|vendor">Uphold vendor claim</button><button class="ab o" data-a="aResolve|${d.bid}|split">Split 50/50</button><button class="ab g" data-a="aResolve|${d.bid}|cust">Refund customer</button></div>`:`<span class="pill s-conf">Resolved · ${d.result}</span>`}</div>`}).join(''):
+  `<div class="panel"><div class="empty" style="padding:24px"><div class="ei">${ic('scale',26)}</div><b>No disputes</b>To see one, tap "Count is wrong" in the customer app at the return step.</div></div>`}`;
+}
+function aSettings(){
+  const st=S.settings;
+  return `<div class="ahead"><div><h1>Settings</h1><p>Business levers · apply to new bookings</p></div></div>
+  <div class="panel"><h2>Pricing and payments</h2><div class="setg">
+   <label for="set-comm">Vendor commission (%)<input id="set-comm" type="number" value="${st.comm}"><span class="help">Taken from the advance at delivery</span></label>
+   <label for="set-fee">Customer booking fee (₹)<input id="set-fee" type="number" value="${st.fee}"><span class="help">Non-refundable</span></label>
+   <label for="set-adv">Advance at booking (%)<input id="set-adv" type="number" value="${st.adv}"><span class="help">Held in escrow</span></label>
+   <label for="set-dep">Refundable deposit (%)<input id="set-dep" type="number" value="${st.dep}"><span class="help">Covers missing items</span></label></div>
+   <button class="ab" style="margin-top:16px;height:38px;padding:0 18px" data-a="aSave">Save settings</button></div>
+  <div class="panel"><h2>Policies</h2><div class="policy">
+   <div>${ic('ret',16)}<span>Cancellation 7 or more days before: full refund minus fee. Under 7 days: 50% of the advance goes to the vendor.</span></div>
+   <div>${ic('alert',16)}<span>Vendor cancels on a muhurat date: ₹2,000 penalty, ranking drop, and we find a replacement.</span></div>
+   <div>${ic('bank',16)}<span>Payouts T+1 by default, or instant at ${st.instant}% fee.</span></div>
+   <div>${ic('scale',16)}<span>Disputes: escrow frozen, decision within 48 hours.</span></div></div></div>
+  <div class="panel"><h2>Cities</h2><div class="chips2">${CITIES.map((c,i)=>`<span class="${i<3?'on':''}">${ic(i<3?'checkc':'clock',12)}${c}${i<3?'':' · soon'}</span>`).join('')}</div></div>`;
+}
+
+/* ============ GUIDE ============ */
+const goC=(stack,tab)=>{S.ui.c.stack=stack;if(tab)S.ui.c.tab=tab};
+const goV=(stack,tab)=>{S.ui.v.stack=stack;if(tab)S.ui.v.tab=tab};
+const demoB=()=>B(S.demo.bid)||S.bookings.find(b=>!b.seed);
+const STEPS=[
+ {t:'Vendor registers',w:'v',h:'<b>Bhanwar Lal</b> signs up in the vendor app with shop details, KYC documents and the stock he rents out.',
+  run:async()=>{ if(!S.ui.v.vid){ goV([{s:'onboard'}]); render(); await sleep(900); H.vSubmit(); } }},
+ {t:'Admin verifies KYC',w:'a',h:'Operations checks the documents and godown visit, then <b>approves</b>. The tent house goes live in Jodhpur and gets a WhatsApp message.',
+  run:async()=>{ S.ui.a.view='vendors'; render(); await sleep(900); const v=Vd(S.ui.v.vid); if(v&&v.status==='pending') H.aApprove(v.id); }},
+ {t:'Customer plans',w:'c',h:'Rohit picks <b>Wedding · 28 Nov · 400 guests</b>, opens the tent house and taps <b>Smart estimate</b>. The whole order is filled from the guest count.',
+  run:async()=>{ const c=S.cust; c.city='Jodhpur'; c.event.type='wedding'; c.event.guests=400; c.event.date='2026-11-28'; c.event.days=2; goC([{s:'home'}],'home'); render(); await sleep(900);
+    const vid=S.ui.v.vid||'v3'; H.cOpenV(vid); await sleep(1000); H.cAuto(); await sleep(1100); H.cGoCart(); }},
+ {t:'Sends request',w:'c',h:'The quote shows exactly when money moves: <b>advance after the vendor accepts, nothing at delivery, balance after return</b>. Sending the request costs nothing.',
+  run:async()=>{ if(!Object.keys(S.cust.cart.items).length){ await STEPS[2].run(); await sleep(700);} H.cSend(); }},
+ {t:'Vendor accepts',w:'v',h:'The vendor sees free stock for that date. <b>Accepting blocks the stock</b>, so double booking on a muhurat date is impossible.',
+  run:async()=>{ const b=demoB(); S.ui.v.vid=b.vid; goV([{s:'home'},{s:'order',id:b.id}],'home'); render(); await sleep(1100); H.vAccept(b.id); }},
+ {t:'Pays advance',w:'c',h:'Rohit pays <b>30% advance, refundable deposit and the ₹99 fee</b> by UPI. The money goes into <b>Tentwala escrow</b>, not to the vendor.',
+  run:async()=>{ const b=demoB(); goC([{s:'bookings'},{s:'booking',id:b.id}],'bookings'); H.cPay(b.id); await sleep(1200); await H.cPayGo('PhonePe'); }},
+ {t:'Vendor dispatches',w:'v',h:'The day before the function the vendor picks a vehicle and dispatches. Rohit receives a <b>4-digit delivery OTP</b>.',
+  run:async()=>{ const b=demoB(); goV([{s:'home'},{s:'order',id:b.id}],'home'); render(); await sleep(900); H.vDispatch(b.id); }},
+ {t:'OTP handover',w:'v',h:'At the venue the items are counted and Rohit reads out the OTP. <b>The advance minus commission is released</b> to the vendor, and Tentwala earns its commission.',
+  run:async()=>{ const b=demoB(); S.ui.v.otp=''; render(); await sleep(500); for(const ch of b.otp){ S.ui.v.otp+=ch; const el=$('#otpbox'); if(el) el.value=S.ui.v.otp; await sleep(250);} await sleep(400); H.vOtp(b.id); }},
+ {t:'Pickup and count',w:'v',h:'After the function the crew picks up and counts. <b>Six chairs are missing</b>. The app prices them at the agreed replacement value, so there is nothing to argue about.',
+  run:async()=>{ const b=demoB(); H.vRetOpen(b.id); await sleep(900); const ch=b.items.find(i=>P(i.pid).key==='chair')||b.items[0]; S.ui.v.ret[ch.pid]=ch.qty-6; render(); await sleep(1300); H.vRetSubmit(b.id); }},
+ {t:'Customer settles',w:'c',h:'Rohit confirms the count and pays the balance by UPI (cash also works). The shortage comes out of the deposit and <b>the rest is refunded automatically</b>.',
+  run:async()=>{ const b=demoB(); goC([{s:'bookings'},{s:'booking',id:b.id}],'bookings'); render(); await sleep(1300); H.cSettle(b.id,'upi'); await sleep(1300); H.cRate(b.id,5); }},
+ {t:'Admin pays out',w:'a',h:'Admin sees every rupee: escrow back to zero, revenue booked, and the <b>T+1 payout</b> to the vendor\'s bank with a reference number.',
+  run:async()=>{ S.ui.a.view='money'; render(); await sleep(1200); const b=demoB(); H.aPayout(b.vid); goV([{s:'earn'}],'earn'); render(); }},
+];
+const WHO={c:['Customer','var(--c-cust)'],v:['Vendor','var(--c-vend)'],a:['Admin','var(--c-adm)']};
+async function runStep(){const i=S.demo.i; if(i>=STEPS.length)return; const st=STEPS[i]; glow(st.w); await st.run(); S.demo.i=i+1; render()}
+function rGuide(){
+  const i=S.demo.i, st=STEPS[i], run=S.demo.running;
+  $('#guide').innerHTML=`<div class="gsteps">${STEPS.map((s,j)=>`<div class="gs ${j<i?'done':j===i?'cur':''}" style="--c:${WHO[s.w][1]}"><span class="n"><i></i>${j+1} · ${WHO[s.w][0]}</span><span class="t">${s.t}</span></div>`).join('')}</div>
+   <div class="gnow">${st?`<span class="who" style="--c:${WHO[st.w][1]}"><i></i>Step ${i+1} · ${WHO[st.w][0]}</span><p>${st.h}</p>`:`<span class="who" style="--c:#7FD3A0"><i></i>Complete</span><p><b>That's the full journey.</b> Reset to run it again, or explore other paths: cancel a booking, tap "Count is wrong" to raise a dispute, change the commission in Admin → Settings, or switch vendors.</p>`}
+   <div class="acts"><button class="tbtn" data-a="gNext" ${run||!st?'disabled':''}>Next step${ic('right',16)}</button><button class="tbtn pri" data-a="gAuto" ${!st&&!run?'disabled':''}>${ic(run?'pause':'play',16)}${run?'Pause':'Auto-play'}</button></div></div>`;
+}
+function rFeed(){
+  $('#feed').innerHTML=S.feed.slice(0,8).map(x=>`<div><span class="to" style="--c:${WHO[x.to][1]}"><i></i>${WHO[x.to][0]}</span><span><span class="ch">${x.ch} · </span>${x.msg}</span><em>${x.t}</em></div>`).join('')||'<div style="grid-template-columns:1fr;border:0;color:var(--page-muted)">Messages to customers and vendors appear here as the demo runs.</div>';
+}
+function modelHtml(){
+  const q=quote('v3',{'v3-chair':400,'v3-maha':1},1); const s=S.settings;
+  return `<div class="modal" data-a="gCloseModal"><div class="in" data-a="noop" role="dialog" aria-label="How money flows"><div class="row sbw" style="align-items:flex-start"><div><h2>How money flows</h2><p class="lead">Customers pay an advance into escrow. Vendors are paid when they hand over the goods. Tentwala takes its share from the advance, so cash balances never leak revenue.</p></div><button class="ib" data-a="gCloseModal" aria-label="Close">${ic('x',18)}</button></div>
+   <div class="flow"><div><span class="n">1</span><b>Vendor accepts</b>Stock is confirmed before anyone pays, so a double-booked vendor never causes a refund.</div><div><span class="n">2</span><b>Advance into escrow</b>${s.adv}% advance, ${s.dep}% refundable deposit and the ₹${s.fee} fee.</div><div><span class="n">3</span><b>Delivery OTP</b>The advance minus ${s.comm}% commission goes to the vendor. Tentwala books its revenue.</div><div><span class="n">4</span><b>Return and settle</b>Balance by UPI or cash. Missing items come out of the deposit, the rest is refunded.</div></div>
+   <table><thead><tr><th>Revenue stream</th><th>Now</th><th>Typical range</th></tr></thead><tbody>
+   <tr><td>Commission on rental (vendor side)</td><td>${s.comm}%</td><td>6–10%</td></tr><tr><td>Customer booking fee</td><td>₹${s.fee}</td><td>₹49–149</td></tr>
+   <tr><td>Vendor Pro subscription</td><td>₹999 / month</td><td>about 20% of vendors</td></tr><tr><td>Instant payout fee</td><td>${s.instant}%</td><td>optional</td></tr>
+   <tr><td>Damage protection add-on, replaces deposit</td><td>Phase 2</td><td>about 2% of order</td></tr><tr><td>Vendor working-capital loans via partner NBFC</td><td>Phase 3</td><td>referral fee</td></tr></tbody></table>
+   <div class="example num"><b>Worked example.</b> 400 chairs and one Maharaja pandal from Rajputana Shamiyana: rental ${inr(q.subtotal)}. Tentwala earns ${inr(q.commission)} + ${inr(q.fee)} = <b>${inr(q.commission+q.fee)}</b>, and the vendor nets ${inr(q.itemsTotal-q.commission)}.</div></div></div>`;
+}
+
+/* ============ RENDER ============ */
+function paint(id,r){
+  const el=$('#'+id); const sc=el.querySelector('.scroll,.amain'); const prev=sc?sc.scrollTop:0; const same=el.dataset.k===r.key;
+  const ae=document.activeElement, keep=ae&&el.contains(ae)&&ae.dataset&&ae.dataset.in?ae.dataset.in:null;
+  el.innerHTML=r.html; el.dataset.k=r.key; const ns=el.querySelector('.scroll,.amain'); if(ns&&same) ns.scrollTop=prev;
+  if(keep){const n=el.querySelector(`[data-in="${keep}"]`); if(n){n.focus();const L=n.value.length;try{n.setSelectionRange(L,L)}catch(e){}}}
+}
+function render(){paint('cust',rc());paint('vend',rv());paint('adm',ra());rGuide();rFeed()}
+function fit(){const c=$('#canvas'),w=$('#wrap');const narrow=window.innerWidth<1000;c.classList.toggle('stack',narrow);
+  const sc=narrow?Math.min(1,(window.innerWidth-8)/890):Math.min(1.15,(window.innerWidth)/1720);c.style.transform=`scale(${sc})`;w.style.height=(c.offsetHeight*sc)+'px'}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const [fn,...args]=el.dataset.a.split('|');if(fn==='noop'){e.stopPropagation();return}if(H[fn]){e.stopPropagation();H[fn](...args)}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role=button][data-a]')){e.preventDefault();e.target.click()}
+  if(e.key==='Enter'&&e.target.id==='otpbox'){const top=S.ui.v.stack.at(-1);H.vOtp(top.id)}
+  if(e.key==='Escape'&&$('#modal').innerHTML)H.gCloseModal()});
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.in;if(k&&IN[k])IN[k](e.target.value)});
+document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.ch;if(k&&CH[k])CH[k](e.target.value,e.target)});
+window.addEventListener('resize',fit);
+$('#logoMk').innerHTML=ic('tent',22); $('#manualBtn').innerHTML=ic('file',16)+'Manual (PDF)'; $('#moneyBtn').innerHTML=ic('rupee',16)+'How money flows'; $('#resetBtn').innerHTML=ic('reset',16)+'Reset';
+$('#url').innerHTML=ic('lock',12)+'admin.tentwala.in'; $('#feedH').innerHTML=ic('msg',14)+'WhatsApp, SMS and push messages sent by the platform';
+seed();render();fit();
+/* Deep links: ?step=N fast-forwards N guided steps; ?solo=c|v|a shows one device only (used for manual screenshots);
+   &cs / &vs / &av override the screen shown (e.g. cs=vendor, vs=stock, av=bookings). */
+if(SOLO){document.body.classList.add('solo','solo-'+SOLO)}
+(async()=>{
+  const n=Math.min(+QS.get('step')||0,STEPS.length);
+  for(let k=0;k<n;k++){await runStep()}
+  const b=demoB();
+  const cs=QS.get('cs'); if(cs){ if(cs==='vendor')goC([{s:'home'},{s:'vendor',id:QS.get('vid')||S.ui.v.vid||'v3'}]); else if(cs==='booking'&&b)goC([{s:'bookings'},{s:'booking',id:b.id}],'bookings'); else if(cs==='pay'&&b){goC([{s:'bookings'},{s:'booking',id:b.id}],'bookings');S.ui.c.pay={id:b.id,proc:false}} else goC([{s:cs}],cs); }
+  const vs=QS.get('vs'); if(vs){ if(vs==='order'&&b)goV([{s:'home'},{s:'order',id:b.id}],'home'); else if(vs==='return'&&b){goV([{s:'home'},{s:'order',id:b.id}],'home');H.vRetOpen(b.id);const ch=b.items.find(i=>P(i.pid).key==='chair');if(ch)S.ui.v.ret[ch.pid]=ch.qty-6} else goV([{s:vs}],vs); }
+  const av=QS.get('av'); if(av){S.ui.a.view=av; if(QS.has('sel')&&b)S.ui.a.sel=b.id}
+  if(QS.has('modal'))H.gModel();
+  render(); document.body.dataset.ready='1';
+})();
+</script>
+</body>
+</html>
