@@ -6,7 +6,7 @@ A working simulation of **Tentwala**, a booking marketplace for tent houses in R
 - **Vendor app**: register with KYC, accept bookings (stock is blocked by date), dispatch, collect the OTP, record the return count, get paid next morning.
 - **Admin dashboard**: approve vendors, watch every booking, see the escrow ledger, release payouts, resolve disputes, set commission and fees.
 
-**Open the demo:** https://halotechstudio.github.io/tentwala-demo/
+**Open the demo:** https://halotechstudio.github.io/client-tentwala-demo/
 **Product manual (PDF):** [Tentwala-Product-Manual.pdf](Tentwala-Product-Manual.pdf)
 
 ## Using it
